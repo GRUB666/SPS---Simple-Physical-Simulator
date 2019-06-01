@@ -22,9 +22,13 @@ protected:
 public:
     explicit Viewport(QWidget *parent = nullptr);
 
-signals:
+    int getCamX();
+    int getCamY();
 
-public slots:
+    void setCamX(int xp);
+    void setCamY(int yp);
+
+    void setPaintVector(QVector<PhObject> vec);
 };
 
 #endif // VIEWPORT_H

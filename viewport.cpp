@@ -10,6 +10,11 @@ void Viewport::paintEvent(QPaintEvent *)
 
     for(auto &var : ToPaintVector)
     {
+        if(var.getFocus())
+            p.setPen(QPen(Qt::darkMagenta, 2, Qt::SolidLine));
+        else
+            p.setPen(QPen(Qt::black, 1, Qt::SolidLine));
+
         p.setBrush(QBrush(var.getColor(), Qt::SolidPattern));
         p.drawEllipse(var.getXPosition() - var.getRadius() - camX, var.getYPosition() - var.getRadius() - camY, var.getRadius()*2, var.getRadius()*2);
     }
@@ -19,5 +24,30 @@ void Viewport::paintEvent(QPaintEvent *)
 Viewport::Viewport(QWidget *parent) : QFrame(parent)
 {
     background_color = Qt::white;
-    camX = camX = 0;
+    camX = camY = 0;
+}
+
+int Viewport::getCamX()
+{
+    return camX;
+}
+
+int Viewport::getCamY()
+{
+    return camY;
+}
+
+void Viewport::setCamX(int xp)
+{
+    this->camX = xp;
+}
+
+void Viewport::setCamY(int yp)
+{
+    this->camY = yp;
+}
+
+void Viewport::setPaintVector(QVector<PhObject> vec)
+{
+    ToPaintVector = vec;
 }

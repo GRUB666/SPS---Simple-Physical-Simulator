@@ -9,9 +9,11 @@ PhObject::PhObject(double mass, double rad, double q, double x, double y, double
     this->y = y;
     this->xSpeed = xS;
     this->ySpeed = yS;
+    this->color = Qt::blue;
+    this->Name = "Object";
+    this->isStatic = false;
+    this->inFocus = false;
 }
-
-
 
 void PhObject::setPosition(double x, double y)
 {
@@ -65,6 +67,21 @@ void PhObject::setColor(QColor color)
     this->color = color;
 }
 
+void PhObject::setName(QString name)
+{
+    this->Name = name;
+}
+
+void PhObject::setStatic(bool val)
+{
+    this->isStatic = val;
+}
+
+void PhObject::setFocus(bool val)
+{
+    this->inFocus = val;
+}
+
 
 
 double PhObject::getXPosition()
@@ -105,4 +122,19 @@ double PhObject::getQ()
 QColor PhObject::getColor()
 {
     return color;
+}
+
+QString PhObject::getName()
+{
+    return Name;
+}
+
+bool PhObject::getStatic()
+{
+    return isStatic;
+}
+
+bool PhObject::getFocus()
+{
+    return inFocus;
 }
