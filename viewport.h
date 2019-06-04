@@ -28,7 +28,7 @@ public:
     void setCamX(int xp);
     void setCamY(int yp);
 
-    void setPaintVector(QVector<PhObject> vec);
+    void setPaintVector(QVector<PhObject>& vec);
 };
 
 #endif // VIEWPORT_H

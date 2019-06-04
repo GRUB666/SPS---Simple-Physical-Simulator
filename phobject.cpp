@@ -9,7 +9,7 @@ PhObject::PhObject(double mass, double rad, double q, double x, double y, double
     this->y = y;
     this->xSpeed = xS;
     this->ySpeed = yS;
-    this->color = Qt::blue;
+    this->color = Qt::black;
     this->Name = "Object";
     this->isStatic = false;
     this->inFocus = false;
@@ -81,8 +81,6 @@ void PhObject::setFocus(bool val)
 {
     this->inFocus = val;
 }
-
-
 
 double PhObject::getXPosition()
 {
