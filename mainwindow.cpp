@@ -1,5 +1,5 @@
-#include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "mainwindow.h"
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -12,6 +12,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->add_button->setIcon(QIcon(QPixmap(":/img/img/plus.png")));
     ui->delete_button->setIcon(QIcon(QPixmap("://img/krest.png")));
     ui->delete_button->setEnabled(false);
+    ui->to_center_button->setIcon(QIcon(QPixmap(":/img/center.png")));
+    ui->to_center_button_2->setIcon(QIcon(QPixmap(":/img/drop_scale.png")));
+    ui->checkpoint_button->setIcon(QIcon(QPixmap("://img/checkpoint.png")));
+
+    ui->add_button->setToolTip("Создать новый объект");
+    ui->delete_button->setToolTip("Удалить выбранный объект");
+    ui->to_center_button->setToolTip("Переместить камеру в центр");
+    ui->to_center_button_2->setToolTip("Установить масштаб на 100%");
+    ui->checkpoint_button->setToolTip("Установить точку возврата");
+
 
     ui->addpattern_button->setIcon(ui->add_button->icon());
     ui->deletepattern_button->setIcon(ui->delete_button->icon());
@@ -21,6 +31,10 @@ MainWindow::MainWindow(QWidget *parent) :
     Patterns.push_back(obj);
     updatePatternsList();
     setPatternMode(false);
+    ui->viewport->setScrollSpeed(0.05);
+    ui->scale_slider->setMaximum(ui->viewport->getScrollSpeed()*10000);
+    ui->scale_slider->setMinimum(ui->viewport->getScrollSpeed()*100);
+    changeScaleSlot(100);
 
     ui->restart_button->setIcon(QIcon(QPixmap("://img/restart.png")));
     timer = new QTimer;  //Таймер
@@ -52,6 +66,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->restart_button, SIGNAL(clicked()), this, SLOT(Restart()));
     connect(ui->add_button, SIGNAL(clicked()), this, SLOT(addObject()));
     connect(ui->delete_button, SIGNAL(clicked()), this, SLOT(deleteObject()));
+    connect(ui->to_center_button, SIGNAL(clicked()), this, SLOT(moveCameraToCenter()));
+    connect(ui->to_center_button_2, SIGNAL(clicked()), this, SLOT(dropCameraScale()));
+    connect(ui->checkpoint_button, SIGNAL(clicked()), this, SLOT(setBuffer()));
+
 
     connect(ui->mass_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
     connect(ui->q_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
@@ -69,6 +87,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->y_mnog, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
     connect(ui->xs_mnog, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
     connect(ui->ys_mnog, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
+    connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
+    connect(ui->viewport, SIGNAL(whellScrolled(int)), this, SLOT(changeScaleSlot(int)));
+    connect(ui->viewport, SIGNAL(camScrolled(int, int)), this, SLOT(changeCamLabel(int, int)));
 
     connect(ui->addpattern_button, SIGNAL(clicked()), this, SLOT(addPattern()));
     connect(ui->deletepattern_button, SIGNAL(clicked()), this, SLOT(deletePattern()));
@@ -91,7 +112,7 @@ void MainWindow::setPause()
 }
 
 void MainWindow::Restart()
-{   
+{
     Objects = Buffer_Objects;
     setFocus();
     updateList();
@@ -602,4 +623,32 @@ void MainWindow::on_ListObjects_clicked(const QModelIndex &index)
 {
     setPatternMode(false);
     setFocus(ui->ListObjects->currentRow());
+}
+
+void MainWindow::changeScaleSlot(int value)
+{
+    ui->scale_slider->setValue(value);
+    ui->scale_label->setText(QString::number(value) + "%");
+    ui->viewport->setScale((double)value / 100);
+}
+
+void MainWindow::changeCamLabel(int x, int y)
+{
+    ui->cam_pos_label->setText("Камера [" + QString::number(x) + "; " + QString::number(y) + "]");
+}
+
+void MainWindow::moveCameraToCenter()
+{
+    ui->viewport->setCamPos();
+    changeCamLabel(0, 0);
+}
+
+void MainWindow::dropCameraScale()
+{
+    changeScaleSlot(100);
+}
+
+void MainWindow::setBuffer()
+{
+    Buffer_Objects = Objects;
 }

@@ -7,5 +7,8 @@
         <file>img/start.png</file>
         <file>img/stop.png</file>
         <file>img/restart.png</file>
+        <file>img/center.png</file>
+        <file>img/drop_scale.png</file>
+        <file>img/checkpoint.png</file>
     </qresource>
 </RCC>

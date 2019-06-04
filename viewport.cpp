@@ -8,24 +8,46 @@ void Viewport::paintEvent(QPaintEvent *)
     p.setBrush(QBrush(background_color, Qt::SolidPattern));
     p.drawRect(QRect(QPoint(-width()/2, height()/2), QPoint(width()/2-2, -height()/2)));
 
-    int border_size = 2;
+    p.scale(1/distance_scale, 1/distance_scale);
 
     for(auto &var : ToPaintVector)
     {
-        p.setBrush(QBrush(var.getColor(), Qt::SolidPattern));
-
         if(var.getFocus())
-        {
-            p.setPen(QPen(Qt::darkMagenta, border_size, Qt::SolidLine));
-            p.drawEllipse(var.getXPosition() - var.getRadius() - border_size - camX, var.getYPosition() - var.getRadius() - border_size - camY, var.getRadius()*2, var.getRadius()*2);
-        }
-
+            p.setPen(QPen(Qt::darkMagenta, 2 * distance_scale, Qt::SolidLine));
         else
-        {
-            p.setPen(QPen(Qt::black, 1, Qt::SolidLine));
-            p.drawEllipse(var.getXPosition() - var.getRadius() - camX, var.getYPosition() - var.getRadius() - camY, var.getRadius()*2, var.getRadius()*2);
-        }
+            p.setPen(QPen(Qt::black, 1 * distance_scale, Qt::SolidLine));
+
+        p.setBrush(QBrush(var.getColor(), Qt::SolidPattern));
+        p.drawEllipse(var.getXPosition() - var.getRadius() - camX, var.getYPosition() - var.getRadius() - camY, var.getRadius()*2, var.getRadius()*2);
     }
+}
+
+void Viewport::wheelEvent(QWheelEvent *e)
+{
+    distance_scale -= SCROLL_SPEED * e->delta()/abs(e->delta());
+    if(distance_scale <= SCROLL_SPEED)
+        distance_scale = SCROLL_SPEED;
+    if(distance_scale > MAX_DISTANCE_SCALE)
+        distance_scale = MAX_DISTANCE_SCALE;
+
+    emit whellScrolled(distance_scale*100);
+    update();
+}
+
+void Viewport::mouseMoveEvent(QMouseEvent *p)
+{
+    camX -= (p->x() - bufferX)*distance_scale;
+    camY += (p->y() - bufferY)*distance_scale;
+    update();
+    emit camScrolled(camX, camY);
+    bufferX = p->x();
+    bufferY = p->y();
+}
+
+void Viewport::mousePressEvent(QMouseEvent *p)
+{
+    bufferX = p->x();
+    bufferY = p->y();
 }
 
 
@@ -33,6 +55,12 @@ Viewport::Viewport(QWidget *parent) : QFrame(parent)
 {
     background_color = Qt::white;
     camX = camY = 0;
+    SCROLL_SPEED = 0.1;
+    distance_scale = 1;
+    MAX_DISTANCE_SCALE = SCROLL_SPEED * 100;
+    MIN_DISTANCE_SCALE = SCROLL_SPEED;
+
+    CAM_SCROLL_SPEED = 100;
 }
 
 int Viewport::getCamX()
@@ -48,11 +76,44 @@ int Viewport::getCamY()
 void Viewport::setCamX(int xp)
 {
     this->camX = xp;
+    update();
 }
 
 void Viewport::setCamY(int yp)
 {
     this->camY = yp;
+    update();
+}
+
+void Viewport::setCamPos(int xp, int yp)
+{
+    this->camX = xp;
+    this->camY = yp;
+    update();
+}
+
+void Viewport::setScrollSpeed(double val)
+{
+    SCROLL_SPEED = val;
+    MAX_DISTANCE_SCALE = SCROLL_SPEED * 100;
+    MIN_DISTANCE_SCALE = SCROLL_SPEED;
+    distance_scale = 1;
+}
+
+void Viewport::setScale(double val)
+{
+    this->distance_scale = val;
+    update();
+}
+
+double Viewport::getScrollSpeed()
+{
+    return SCROLL_SPEED;
+}
+
+double Viewport::getScale()
+{
+    return distance_scale;
 }
 
 void Viewport::setPaintVector(QVector<PhObject>& vec)

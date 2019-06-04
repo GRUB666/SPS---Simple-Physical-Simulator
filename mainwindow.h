@@ -11,6 +11,7 @@
 #include <cmath>
 #include "phobject.h"
 
+
 namespace Ui {
 class MainWindow;
 }
@@ -75,6 +76,11 @@ private slots:
    void on_Patterns_list_currentRowChanged(int currentRow);
    void on_Patterns_list_clicked(const QModelIndex &index);
    void on_ListObjects_clicked(const QModelIndex &index);
+   void changeScaleSlot(int value);
+   void changeCamLabel(int x, int y);
+   void moveCameraToCenter();
+   void dropCameraScale();
+   void setBuffer();
 };
 
 #endif // MAINWINDOW_H
