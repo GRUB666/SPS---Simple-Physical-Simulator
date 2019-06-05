@@ -18,8 +18,11 @@ void Viewport::paintEvent(QPaintEvent *)
             p.setPen(QPen(Qt::black, 1 * distance_scale, Qt::SolidLine));
 
         p.setBrush(QBrush(var.getColor(), Qt::SolidPattern));
-        p.drawEllipse(var.getXPosition() - var.getRadius() - camX, var.getYPosition() - var.getRadius() - camY, var.getRadius()*2, var.getRadius()*2);
+        p.drawEllipse(var.getXPosition() - var.getRadius()*10 - camX, var.getYPosition() - var.getRadius()*10 - camY, var.getRadius()*20, var.getRadius()*20);
     }
+
+    p.setBrush(QBrush(Qt::darkMagenta, Qt::SolidPattern));
+    p.drawEllipse(camX, camY, distance_scale, distance_scale);
 }
 
 void Viewport::wheelEvent(QWheelEvent *e)
@@ -54,6 +57,7 @@ void Viewport::mousePressEvent(QMouseEvent *p)
 Viewport::Viewport(QWidget *parent) : QFrame(parent)
 {
     background_color = Qt::white;
+    showPricel = true;
     camX = camY = 0;
     SCROLL_SPEED = 0.1;
     distance_scale = 1;

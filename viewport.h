@@ -23,6 +23,7 @@ private:
     double SCROLL_SPEED;
     int CAM_SCROLL_SPEED;
     int bufferX, bufferY;
+    bool showPricel;
 
 protected:
     virtual void paintEvent(QPaintEvent*);

@@ -18,7 +18,7 @@ private:
     bool inFocus;
 
 public:
-    PhObject(double mass = 0, double rad = 10, double q = 0, double x = 0, double y = 0, double xS = 0, double yS = 0);
+    PhObject(double mass = 1, double rad = 1, double q = 0, double x = 0, double y = 0, double xS = 0, double yS = 0);
 
     //----Setters----
     void setPosition (double x, double y); //Position methods

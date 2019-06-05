@@ -9,6 +9,8 @@
 #include <QPalette>
 #include <QMessageBox>
 #include <cmath>
+#include <QKeyEvent>
+#include <QShortcut>
 #include "phobject.h"
 
 
@@ -30,15 +32,22 @@ private:
 
     QTimer* timer;
 
-    QPalette commonPalette;
-    QPalette patternPalette;
+    QShortcut *keyAdd;
+    QShortcut *keyDelete;
+    QShortcut *keyCenter;
+    QShortcut *keyScale;
+    QShortcut *keyCheckPoint;
 
     double G, k;
     bool isPause;
+    bool FullScreenMode;
 
     bool SET_PAUSE_AFTER_CREATE;
     bool SET_PAUSE_AFTER_RESTART;
     bool FOLLOW_TO_FOCUS_OBJECT;
+
+protected:
+    virtual void keyPressEvent(QKeyEvent* pe);
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -48,7 +57,7 @@ public:
 private:
     void setPause (bool val             );
     void setFocus (int index = -1);
-    void printToPanel(PhObject&);
+    void printToPanel(PhObject&, bool sp = false);
     void setColorBox(PhObject &toSet);
     void clearPrintPanel();
     void updateList();
@@ -56,6 +65,9 @@ private:
     QColor getColorBox();
     int getPowerMnog(QComboBox*);
     void updateViewport();
+    double getDistance(int obj1, int obj2);
+    void setConstFields();
+    void setFullScreenMode(bool val);
 
 private:
     Ui::MainWindow *ui;
@@ -65,7 +77,7 @@ private slots:
    void setPause ();
    void Restart  ();
    void addObject();
-   void deleteObject();
+   void deleteObject(int index = -1);
    void changeParameters();
    void on_name_line_textEdited(const QString &arg1);
    void on_ListObjects_currentRowChanged(int currentRow);
@@ -81,6 +93,9 @@ private slots:
    void moveCameraToCenter();
    void dropCameraScale();
    void setBuffer();
+   void on_g_line_textEdited(const QString &arg1);
+   void on_k_line_textEdited(const QString &arg1);
+   void on_ListObjects_doubleClicked(const QModelIndex &index);
 };
 
 #endif // MAINWINDOW_H
