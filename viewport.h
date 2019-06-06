@@ -23,7 +23,8 @@ private:
     double SCROLL_SPEED;
     int CAM_SCROLL_SPEED;
     int bufferX, bufferY;
-    bool showPricel;
+    double sim_speed;
+
 
 protected:
     virtual void paintEvent(QPaintEvent*);
@@ -32,6 +33,7 @@ protected:
     virtual void mousePressEvent(QMouseEvent* p);
 
 public:
+
     explicit Viewport(QWidget *parent = nullptr);
 
     int getCamX();

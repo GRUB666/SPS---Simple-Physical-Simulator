@@ -11,6 +11,9 @@
 #include <cmath>
 #include <QKeyEvent>
 #include <QShortcut>
+#include <ctime>
+#include <chrono>
+#include <thread>
 #include "phobject.h"
 
 
@@ -37,6 +40,9 @@ private:
     QShortcut *keyCenter;
     QShortcut *keyScale;
     QShortcut *keyCheckPoint;
+    QShortcut *keyRestart;
+    QShortcut *keyPause;
+    QShortcut *keySetCenter;
 
     double G, k;
     bool isPause;
@@ -45,6 +51,9 @@ private:
     bool SET_PAUSE_AFTER_CREATE;
     bool SET_PAUSE_AFTER_RESTART;
     bool FOLLOW_TO_FOCUS_OBJECT;
+
+    double sim_speed;
+    int delta;
 
 protected:
     virtual void keyPressEvent(QKeyEvent* pe);
@@ -68,6 +77,7 @@ private:
     double getDistance(int obj1, int obj2);
     void setConstFields();
     void setFullScreenMode(bool val);
+    void followToObject(PhObject& obj);
 
 private:
     Ui::MainWindow *ui;
@@ -96,6 +106,9 @@ private slots:
    void on_g_line_textEdited(const QString &arg1);
    void on_k_line_textEdited(const QString &arg1);
    void on_ListObjects_doubleClicked(const QModelIndex &index);
+   void changeFollowSetting();
+   void changeFollowSetting(bool val);
+   void makeCenter();
 };
 
 #endif // MAINWINDOW_H

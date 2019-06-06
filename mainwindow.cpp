@@ -13,8 +13,6 @@ void MainWindow::keyPressEvent(QKeyEvent *pe)
     {
         setFullScreenMode(false);
     }
-
-    qDebug() << pe->key();
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -32,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->to_center_button->setIcon(QIcon(QPixmap(":/img/center.png")));
     ui->to_center_button_2->setIcon(QIcon(QPixmap(":/img/drop_scale.png")));
     ui->checkpoint_button->setIcon(QIcon(QPixmap("://img/checkpoint.png")));
+    ui->set_center_button->setIcon(QIcon(QPixmap(":/img/setcenter.png")));
+
 
     ui->add_button->setToolTip("Создать новый объект");
     ui->delete_button->setToolTip("Удалить выбранный объект");
@@ -40,6 +40,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->checkpoint_button->setToolTip("Установить точку возврата");
     ui->addpattern_button->setToolTip("Создать шаблон");
     ui->deletepattern_button->setToolTip("Удалить выбранный шаблон");
+    ui->set_center_button->setToolTip("Сделать положение камеры началом координат");
+
 
     keyAdd = new QShortcut(this);
     keyAdd->setKey(Qt::CTRL + Qt::Key_A);
@@ -55,6 +57,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     keyCheckPoint = new QShortcut(this);
     keyCheckPoint->setKey(Qt::CTRL + Qt::Key_F);
+
+    keyRestart = new QShortcut(this);
+    keyRestart->setKey(Qt::CTRL + Qt::Key_R);
+
+    keyPause = new QShortcut(this);
+    keyPause->setKey(Qt::CTRL + Qt::Key_Tab);
+
+    keySetCenter = new QShortcut(this);
+    keySetCenter->setKey(Qt::CTRL + Qt::Key_X);
 
 
     ui->addpattern_button->setIcon(ui->add_button->icon());
@@ -93,8 +104,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     SET_PAUSE_AFTER_CREATE = true;
     SET_PAUSE_AFTER_RESTART = true;
-    FOLLOW_TO_FOCUS_OBJECT = true;
+    changeFollowSetting(false);
     FullScreenMode = false;
+    sim_speed = 0.01;
+    delta = 0;
     G = 1;
     k = 1;
     setConstFields();
@@ -109,7 +122,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->to_center_button, SIGNAL(clicked()), this, SLOT(moveCameraToCenter()));
     connect(ui->to_center_button_2, SIGNAL(clicked()), this, SLOT(dropCameraScale()));
     connect(ui->checkpoint_button, SIGNAL(clicked()), this, SLOT(setBuffer()));
-
+    connect(ui->follow_button, SIGNAL(clicked()), this, SLOT(changeFollowSetting()));
+    connect(ui->set_center_button, SIGNAL(clicked()), this, SLOT(makeCenter()));
 
     connect(ui->mass_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
     connect(ui->q_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
@@ -135,6 +149,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(keyCenter, SIGNAL(activated()), this, SLOT(moveCameraToCenter()));
     connect(keyScale, SIGNAL(activated()), this, SLOT(dropCameraScale()));
     connect(keyCheckPoint, SIGNAL(activated()), this, SLOT(setBuffer()));
+    connect(keyRestart, SIGNAL(activated()), this, SLOT(Restart()));
+    connect(keyPause, SIGNAL(activated()), this, SLOT(setPause()));
+    connect(keySetCenter, SIGNAL(activated()), this, SLOT(makeCenter()));
 }
 
 MainWindow::~MainWindow()
@@ -148,6 +165,8 @@ void MainWindow::ForceCalc()
     double angle;
     double ax, ay;
     double distance;
+
+    auto begin = std::chrono::steady_clock::now();
 
     for(int i = 0; i < Objects.size(); i++)
     {
@@ -177,13 +196,33 @@ void MainWindow::ForceCalc()
                 ay += F*sin(angle) / Objects[i].getMass();
             }
         }
+        }
+
+        auto end = std::chrono::steady_clock::now();
+
+        auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+
+        delta += elapsed_ms.count();
+
+        double del = ceil(log10(delta)) - 1;
+        del = pow(10, del);
+
+        del = ceil((double)delta / del)*del - delta;
+
+        std::this_thread::sleep_for(std::chrono::microseconds((int)del));
 
         Objects[i].setXSpeed(Objects[i].getXSpeed() + ax);
         Objects[i].setYSpeed(Objects[i].getYSpeed() + ay);
-        }
 
         Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed());
         Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed());
+
+        delta = 0;
+
+        begin = std::chrono::steady_clock::now();
+
+        if(FOLLOW_TO_FOCUS_OBJECT && Objects[i].getFocus())
+            followToObject(Objects[i]);
         }
 
         for(int j = 0; j < Objects.size(); j++)
@@ -236,6 +275,12 @@ void MainWindow::ForceCalc()
             }
         }
     }
+
+    auto end = std::chrono::steady_clock::now();
+
+    auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+
+    delta = elapsed_ms.count();
 
     if(current_index >= 0 && current_index < Objects.size())
     printToPanel(Objects[current_index], true);
@@ -292,6 +337,7 @@ void MainWindow::setFocus(int index)
     if(index < 0)
     {
         ui->Propertites_box->setEnabled(false);
+        dropFocus();
         clearPrintPanel();
         ui->delete_button->setEnabled(false);
     }
@@ -343,49 +389,37 @@ void MainWindow::deleteObject(int index)
 {
     QString name;
 
-    if(current_index < Objects.size())
+    if(index >= 0 && index < Objects.size())
     {
+        Objects.erase(Objects.begin() + index);
 
-    if(index < 0)
-    name = Objects[current_index].getName();
+        if(current_index == index)
+            setFocus(-1);
 
-    if(index < 0)
-    Objects.erase(Objects.begin() + current_index);
-    else
-    Objects.erase(Objects.begin() + index);
-
-
-    if(Objects.size() == 0 || current_index == index)
-    {
-        setFocus(-1);
+        else if(current_index > index)
+        {
+            current_index--;
+            setFocus(current_index);
+        }
     }
 
-    else if(index >= 0)
+    else if(current_index < Objects.size() && current_index >= 0)
     {
-       if(index < current_index)
-       {
-           current_index--;
-           setFocus(current_index);
-       }
-    }
+        name = Objects[current_index].getName();
+        Objects.erase(Objects.begin() + current_index);
 
-    else if(current_index >= Objects.size())
-    {
-        current_index = Objects.size() - 1;
-        setFocus(current_index);
+        if(current_index >= Objects.size())
+        {
+            current_index--;
+            setFocus(current_index);
+
+            ui->statusBar->showMessage("Удалён объект: " + name);
+        }
 
         updateViewport();
     }
-
-    if(index < 0)
-    {
-        updateViewport();
-        ui->statusBar->showMessage("Удалён объект: " + name);
-    }
-
 
     updateList();
-    }
 }
 
 
@@ -539,6 +573,9 @@ void MainWindow::updateList()
     ui->ListObjects->clear();
     ui->ListObjects->blockSignals(false);
 
+    ui->count_lab->setText("Объектов: " + QString::number(Objects.size()));
+
+
     for(auto &var : Objects)
     {
         if(var.getName().isEmpty())
@@ -613,6 +650,14 @@ void MainWindow::setFullScreenMode(bool val)
         showNormal();
         ui->statusBar->showMessage("Выключен полноэкранный режим. Чтобы активировать полноэкранный режим нажмите F11");
     }
+}
+
+void MainWindow::followToObject(PhObject &obj)
+{
+    ui->viewport->setCamX(obj.getXPosition());
+    ui->viewport->setCamY(obj.getYPosition());
+
+    changeCamLabel(obj.getXPosition(), obj.getYPosition());
 }
 
 
@@ -811,7 +856,56 @@ void MainWindow::on_ListObjects_doubleClicked(const QModelIndex &index)
 {
     if(current_index >= 0 || current_index < Objects.size())
     {
-    ui->viewport->setCamX(Objects[current_index].getXPosition());
-    ui->viewport->setCamY(Objects[current_index].getYPosition());
+        followToObject(Objects[current_index]);
+        ui->viewport->update();
     }
+
+}
+
+void MainWindow::changeFollowSetting()
+{
+    FOLLOW_TO_FOCUS_OBJECT = !FOLLOW_TO_FOCUS_OBJECT;
+
+    if(FOLLOW_TO_FOCUS_OBJECT)
+    {
+        ui->follow_button->setIcon(QIcon(QPixmap(":/img/not_follow.png")));
+        ui->follow_button->setToolTip("Не следить за выбранным объектом");
+    }
+
+    else
+    {
+        ui->follow_button->setIcon(QIcon(QPixmap(":/img/follow.png")));
+        ui->follow_button->setToolTip("Следить за выбранным объектом");
+    }
+}
+
+void MainWindow::changeFollowSetting(bool val)
+{
+    FOLLOW_TO_FOCUS_OBJECT = val;
+
+    if(FOLLOW_TO_FOCUS_OBJECT)
+    {
+        ui->follow_button->setIcon(QIcon(QPixmap(":/img/not_follow.png")));
+        ui->follow_button->setToolTip("Не следить за выбранным объектом");
+    }
+
+    else
+    {
+        ui->follow_button->setIcon(QIcon(QPixmap(":/img/follow.png")));
+        ui->follow_button->setToolTip("Следить за выбранным объектом");
+    }
+}
+
+void MainWindow::makeCenter()
+{
+    for(auto &var : Objects)
+    {
+        var.setPosition(var.getXPosition() - ui->viewport->getCamX(), var.getYPosition() - ui->viewport->getCamY());
+    }
+
+    ui->viewport->setCamPos();
+    changeCamLabel(0, 0);
+    ui->statusBar->showMessage("Начало координат установлено на положение камеры");
+
+    updateViewport();
 }

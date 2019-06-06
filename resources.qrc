@@ -10,5 +10,10 @@
         <file>img/center.png</file>
         <file>img/drop_scale.png</file>
         <file>img/checkpoint.png</file>
+        <file>img/Pricel_hide.png</file>
+        <file>img/Pricel_show.png</file>
+        <file>img/follow.png</file>
+        <file>img/not_follow.png</file>
+        <file>img/setcenter.png</file>
     </qresource>
 </RCC>
