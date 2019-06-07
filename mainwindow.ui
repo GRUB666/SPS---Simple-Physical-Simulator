@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>SPS - Simple Physical Simulator</string>
+   <string>SPS - Simple Physical Simulator 1.0 alpha</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_13">
@@ -20,7 +20,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <property name="rightMargin">
-         <number>130</number>
+         <number>250</number>
         </property>
         <item>
          <widget class="QPushButton" name="add_button">
@@ -1555,22 +1555,70 @@
     <property name="title">
      <string>Файл</string>
     </property>
+    <addaction name="action"/>
+    <addaction name="action_2"/>
+    <addaction name="action_3"/>
+    <addaction name="action_4"/>
    </widget>
    <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>Настройки</string>
+    </property>
+    <addaction name="action_F11"/>
+    <addaction name="action_F11_2"/>
+   </widget>
+   <widget class="QMenu" name="menu_3">
     <property name="title">
      <string>Генерация</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menu_3">
+   <widget class="QMenu" name="menu_4">
     <property name="title">
-     <string>Настройки</string>
+     <string>Отладочная информация</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_5">
+    <property name="title">
+     <string>Справка</string>
     </property>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
+   <addaction name="menu_4"/>
+   <addaction name="menu_5"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="action">
+   <property name="text">
+    <string>Создать новую модель</string>
+   </property>
+  </action>
+  <action name="action_2">
+   <property name="text">
+    <string>Открыть модель</string>
+   </property>
+  </action>
+  <action name="action_3">
+   <property name="text">
+    <string>Сохранить текущую модель</string>
+   </property>
+  </action>
+  <action name="action_4">
+   <property name="text">
+    <string>Сохранить текущую модель как...</string>
+   </property>
+  </action>
+  <action name="action_F11">
+   <property name="text">
+    <string>Настройки вывода графики</string>
+   </property>
+  </action>
+  <action name="action_F11_2">
+   <property name="text">
+    <string>Полноэкранный режим F11</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>

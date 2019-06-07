@@ -2,7 +2,7 @@
 #include <QApplication>
 
 
-//Location: C:\Qt\Projects\SimplePhysicalSimulator
+//Location: C:\Qt\Projects\SimplePhysicalSimulator\SPS---Simple-Physical-Simulator
 //Github rep: https://github.com/GRUB666/SPS---Simple-Physical-Simulator.git
 
 

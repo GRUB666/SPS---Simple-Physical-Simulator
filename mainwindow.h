@@ -74,10 +74,11 @@ private:
     QColor getColorBox();
     int getPowerMnog(QComboBox*);
     void updateViewport();
-    double getDistance(int obj1, int obj2);
+    long double getDistance(int obj1, int obj2);
     void setConstFields();
     void setFullScreenMode(bool val);
     void followToObject(PhObject& obj);
+    bool checkIndexValid(int index, QVector<PhObject> &vec);
 
 private:
     Ui::MainWindow *ui;

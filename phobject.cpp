@@ -1,6 +1,6 @@
 #include "phobject.h"
 
-PhObject::PhObject(double mass, double rad, double q, double x, double y, double xS, double yS)
+PhObject::PhObject(long double mass, long double rad, long double q, long double x, long double y, long double xS, long double yS)
 {
     this->mass = mass;
     this->radius = rad;
@@ -15,49 +15,49 @@ PhObject::PhObject(double mass, double rad, double q, double x, double y, double
     this->inFocus = false;
 }
 
-void PhObject::setPosition(double x, double y)
+void PhObject::setPosition(long double x, long double y)
 {
     this->x = x;
     this->y = y;
 }
 
-void PhObject::setXPosition(double x)
+void PhObject::setXPosition(long double x)
 {
     this->x = x;
 }
 
-void PhObject::setYPosition(double y)
+void PhObject::setYPosition(long double y)
 {
     this->y = y;
 }
 
-void PhObject::setSpeed(double xS, double yS)
+void PhObject::setSpeed(long double xS, long double yS)
 {
     this->xSpeed = xS;
     this->ySpeed = yS;
 }
 
-void PhObject::setXSpeed(double xS)
+void PhObject::setXSpeed(long double xS)
 {
     this->xSpeed = xS;
 }
 
-void PhObject::setYSpeed(double yS)
+void PhObject::setYSpeed(long double yS)
 {
     this->ySpeed = yS;
 }
 
-void PhObject::setMass(double mass)
+void PhObject::setMass(long double mass)
 {
     this->mass = mass;
 }
 
-void PhObject::setRadius(double radius)
+void PhObject::setRadius(long double radius)
 {
     this->radius = radius;
 }
 
-void PhObject::setQ(double q)
+void PhObject::setQ(long double q)
 {
     this->q = q;
 }
@@ -82,37 +82,37 @@ void PhObject::setFocus(bool val)
     this->inFocus = val;
 }
 
-double PhObject::getXPosition()
+long double PhObject::getXPosition()
 {
     return x;
 }
 
-double PhObject::getYPosition()
+long double PhObject::getYPosition()
 {
     return y;
 }
 
-double PhObject::getXSpeed()
+long double PhObject::getXSpeed()
 {
     return xSpeed;
 }
 
-double PhObject::getYSpeed()
+long double PhObject::getYSpeed()
 {
     return ySpeed;
 }
 
-double PhObject::getMass()
+long double PhObject::getMass()
 {
     return mass;
 }
 
-double PhObject::getRadius()
+long double PhObject::getRadius()
 {
     return radius;
 }
 
-double PhObject::getQ()
+long double PhObject::getQ()
 {
     return q;
 }

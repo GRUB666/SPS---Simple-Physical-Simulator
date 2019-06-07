@@ -7,31 +7,31 @@
 class PhObject
 {
 private:
-    double x, y;
-    double xSpeed, ySpeed;
-    double mass;
-    double radius;
-    double q;
+    long double x, y;
+    long double xSpeed, ySpeed;
+    long double mass;
+    long double radius;
+    long double q;
     QColor color;
     QString Name;
     bool isStatic;
     bool inFocus;
 
 public:
-    PhObject(double mass = 1, double rad = 1, double q = 0, double x = 0, double y = 0, double xS = 0, double yS = 0);
+    PhObject(long double mass = 1, long double rad = 1, long double q = 0, long double x = 0, long double y = 0, long double xS = 0, long double yS = 0);
 
     //----Setters----
-    void setPosition (double x, double y); //Position methods
-    void setXPosition(double x          );
-    void setYPosition(double y          );
+    void setPosition (long double x, long double y); //Position methods
+    void setXPosition(long double x          );
+    void setYPosition(long double y          );
 
-    void setSpeed (double xS, double yS); //Speed methods
-    void setXSpeed(double xS           );
-    void setYSpeed(double yS           );
+    void setSpeed (long double xS, long double yS); //Speed methods
+    void setXSpeed(long double xS           );
+    void setYSpeed(long double yS           );
 
-    void setMass   (double mass  );
-    void setRadius (double radius);
-    void setQ      (double q);
+    void setMass   (long double mass  );
+    void setRadius (long double radius);
+    void setQ      (long double q);
     void setColor  (QColor color );
     void setName   (QString name);
     void setStatic (bool val);
@@ -39,15 +39,15 @@ public:
 
 
     //----Getters----
-    double getXPosition();
-    double getYPosition();
+    long double getXPosition();
+    long double getYPosition();
 
-    double getXSpeed();
-    double getYSpeed();
+    long double getXSpeed();
+    long double getYSpeed();
 
-    double  getMass();
-    double  getRadius();
-    double  getQ();
+    long double  getMass();
+    long double  getRadius();
+    long double  getQ();
     QColor  getColor();
     QString getName();
     bool getStatic();

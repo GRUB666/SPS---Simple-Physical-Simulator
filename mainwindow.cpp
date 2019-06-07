@@ -4,14 +4,19 @@
 
 void MainWindow::keyPressEvent(QKeyEvent *pe)
 {
-    if(pe->key() == 16777274)
+    if(pe->key() == 16777274) //16777274 - F11
     {
         setFullScreenMode(!FullScreenMode);
     }
 
-    if(pe->key() == 16777216 && FullScreenMode)
+    if(pe->key() == 16777216 && FullScreenMode) //16777216 - Ecs
     {
         setFullScreenMode(false);
+    }
+
+    if(pe->key() == Qt::Key_Delete)
+    {
+        deleteObject();
     }
 }
 
@@ -21,9 +26,14 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    resize(maximumSize());
+    resize(maximumSize()); //Меняю размер
 
-    ui->statusBar->showMessage("Приложение загружено");              //Первоначальная инициализация приложения
+    //Загрузка всех кнопок-------------------------------
+
+
+    setWindowIcon(QIcon(QPixmap(":/img/Mainico.png")));
+
+    ui->statusBar->showMessage("Приложение загружено");
     ui->add_button->setIcon(QIcon(QPixmap(":/img/img/plus.png")));
     ui->delete_button->setIcon(QIcon(QPixmap("://img/krest.png")));
     ui->delete_button->setEnabled(false);
@@ -31,7 +41,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->to_center_button_2->setIcon(QIcon(QPixmap(":/img/drop_scale.png")));
     ui->checkpoint_button->setIcon(QIcon(QPixmap("://img/checkpoint.png")));
     ui->set_center_button->setIcon(QIcon(QPixmap(":/img/setcenter.png")));
-
+    ui->restart_button->setIcon(QIcon(QPixmap("://img/restart.png")));
+    ui->addpattern_button->setIcon(ui->add_button->icon());
+    ui->deletepattern_button->setIcon(ui->delete_button->icon());
 
     ui->add_button->setToolTip("Создать новый объект");
     ui->delete_button->setToolTip("Удалить выбранный объект");
@@ -42,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->deletepattern_button->setToolTip("Удалить выбранный шаблон");
     ui->set_center_button->setToolTip("Сделать положение камеры началом координат");
 
-
+    //Установка горячих клавиш---------------------------------
     keyAdd = new QShortcut(this);
     keyAdd->setKey(Qt::CTRL + Qt::Key_A);
 
@@ -66,30 +78,36 @@ MainWindow::MainWindow(QWidget *parent) :
 
     keySetCenter = new QShortcut(this);
     keySetCenter->setKey(Qt::CTRL + Qt::Key_X);
+    //----------------------------------------------
 
 
-    ui->addpattern_button->setIcon(ui->add_button->icon());
-    ui->deletepattern_button->setIcon(ui->delete_button->icon());
+    //Инициализация шаблонов
     current_pattern = 0;
     PhObject obj;
     obj.setName("Стандартный");
     Patterns.push_back(obj);
     updatePatternsList();
     setPatternMode(false);
+    //--------------------
+
+    //Настройка параметров графического вывода
     ui->viewport->setScrollSpeed(0.05);
     ui->scale_slider->setMaximum(ui->viewport->getScrollSpeed()*10000);
     ui->scale_slider->setMinimum(ui->viewport->getScrollSpeed()*100);
     changeScaleSlot(100);
+    //--------------------------
 
-    ui->restart_button->setIcon(QIcon(QPixmap("://img/restart.png")));
-    timer = new QTimer;  //Таймер
+    //Таймер приложения, установка фокуса на -1
+    timer = new QTimer;
     timer->setInterval(0);
     setPause(true);
     setFocus(-1);
+    //-----------------------
 
+
+    //Валидаторы----------------------
     QRegExp valide_reg("\\-?\\d{1,}\\.?\\d{1,}");
     QValidator *validator = new QRegExpValidator(valide_reg, this);
-
     ui->mass_line->setValidator(validator);
     ui->q_line->setValidator(validator);
     ui->rad_line->setValidator(validator);
@@ -99,8 +117,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ys_line->setValidator(validator);
     ui->g_line->setValidator(validator);
     ui->k_line->setValidator(validator);
+    //---------------------------
 
-    //----Установка настроек
+    //Установка настроек приложения--------------
 
     SET_PAUSE_AFTER_CREATE = true;
     SET_PAUSE_AFTER_RESTART = true;
@@ -111,10 +130,12 @@ MainWindow::MainWindow(QWidget *parent) :
     G = 1;
     k = 1;
     setConstFields();
-
     //----------------------
 
-    connect(timer, SIGNAL(timeout()), this, SLOT(ForceCalc()));            //Соединение сигналов и слотов
+    //Соединение сигналов и слотов--------------------------------------------
+
+    //Сигналы кнопок-------------------
+    connect(timer, SIGNAL(timeout()), this, SLOT(ForceCalc()));
     connect(ui->pause_button, SIGNAL(clicked()), this, SLOT(setPause()));
     connect(ui->restart_button, SIGNAL(clicked()), this, SLOT(Restart()));
     connect(ui->add_button, SIGNAL(clicked()), this, SLOT(addObject()));
@@ -124,7 +145,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->checkpoint_button, SIGNAL(clicked()), this, SLOT(setBuffer()));
     connect(ui->follow_button, SIGNAL(clicked()), this, SLOT(changeFollowSetting()));
     connect(ui->set_center_button, SIGNAL(clicked()), this, SLOT(makeCenter()));
+    connect(ui->addpattern_button, SIGNAL(clicked()), this, SLOT(addPattern()));
+    connect(ui->deletepattern_button, SIGNAL(clicked()), this, SLOT(deletePattern()));
+    //---------------------------------
 
+    //Текстовые поля и ComboBox-----------
     connect(ui->mass_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
     connect(ui->q_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
     connect(ui->rad_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
@@ -134,16 +159,20 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->ys_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
     connect(ui->isMoveBox, SIGNAL(stateChanged(int)), this, SLOT(changeParameters()));
     connect(ui->color_box, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
+    //-------------------
 
+    //Степени десятки---
     connect(ui->mass_mnog, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
     connect(ui->q_mnog, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
-    connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
+    //------------------
+
+    //Сигналы, связанные с графическим выводом---
     connect(ui->viewport, SIGNAL(whellScrolled(int)), this, SLOT(changeScaleSlot(int)));
     connect(ui->viewport, SIGNAL(camScrolled(int, int)), this, SLOT(changeCamLabel(int, int)));
+    connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
+    //-------------------------------------------
 
-    connect(ui->addpattern_button, SIGNAL(clicked()), this, SLOT(addPattern()));
-    connect(ui->deletepattern_button, SIGNAL(clicked()), this, SLOT(deletePattern()));
-
+    //Сочетания клавиш-------------
     connect(keyAdd, SIGNAL(activated()), this, SLOT(addObject()));
     connect(keyDelete, SIGNAL(activated()), this, SLOT(deleteObject()));
     connect(keyCenter, SIGNAL(activated()), this, SLOT(moveCameraToCenter()));
@@ -152,6 +181,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(keyRestart, SIGNAL(activated()), this, SLOT(Restart()));
     connect(keyPause, SIGNAL(activated()), this, SLOT(setPause()));
     connect(keySetCenter, SIGNAL(activated()), this, SLOT(makeCenter()));
+    //------------------------------
 }
 
 MainWindow::~MainWindow()
@@ -161,10 +191,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::ForceCalc()
 {
-    double F;
-    double angle;
-    double ax, ay;
-    double distance;
+    long double F;
+    long double angle;
+    long double ax, ay;
+    long double distance;
+    bool hideAdditionalInfo = true;
 
     auto begin = std::chrono::steady_clock::now();
 
@@ -173,9 +204,9 @@ void MainWindow::ForceCalc()
         ax = 0;
         ay = 0;
 
-        if(!Objects[i].getStatic())
+        if(!Objects[i].getStatic()) //Проверка на статичность
         {
-        if(Objects[i].getMass() > 0)
+        if(Objects[i].getMass() != 0) //Проверка на наличие массы
         {
         for(int j = 0; j < Objects.size(); j++)
         {
@@ -190,10 +221,13 @@ void MainWindow::ForceCalc()
                         / pow(distance, 2);
 
 
-                angle = atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
+                angle = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
 
-                ax += F*cos(angle) / Objects[i].getMass();
-                ay += F*sin(angle) / Objects[i].getMass();
+
+                QString str = QString::number((double)angle);
+
+                ax += F*std::cos(angle) / Objects[i].getMass();
+                                ay += F*std::sin(angle) / Objects[i].getMass();
             }
         }
         }
@@ -204,12 +238,12 @@ void MainWindow::ForceCalc()
 
         delta += elapsed_ms.count();
 
-        double del = ceil(log10(delta)) - 1;
+        long double del = ceil(log10(delta)) - 1;
         del = pow(10, del);
 
-        del = ceil((double)delta / del)*del - delta;
+        del = ceil((long double)delta / del)*del - delta;
 
-        std::this_thread::sleep_for(std::chrono::microseconds((int)del));
+        //std::this_thread::sleep_for(std::chrono::microseconds((int)del));
 
         Objects[i].setXSpeed(Objects[i].getXSpeed() + ax);
         Objects[i].setYSpeed(Objects[i].getYSpeed() + ay);
@@ -225,6 +259,8 @@ void MainWindow::ForceCalc()
             followToObject(Objects[i]);
         }
 
+
+
         for(int j = 0; j < Objects.size(); j++)
         {
             if(j != i)
@@ -234,40 +270,39 @@ void MainWindow::ForceCalc()
 
                 if(getDistance(i, j) < Objects[i].getRadius()*10 + Objects[j].getRadius()*10)
                 {
-                    double Vx, Vy;
-                    double xc, yc;
+                    long double Vx, Vy;
+                    long double xc, yc;
+
+                    Vx = (Objects[i].getMass() * Objects[i].getXSpeed() + Objects[j].getMass() * Objects[j].getXSpeed()) / (Objects[i].getMass() + Objects[j].getMass());
+                    Vy = (Objects[i].getMass() * Objects[i].getYSpeed() + Objects[j].getMass() * Objects[j].getYSpeed()) / (Objects[i].getMass() + Objects[j].getMass());
+
+                    xc = (Objects[i].getMass() * Objects[i].getXPosition() + Objects[j].getMass() * Objects[j].getXPosition()) / (Objects[i].getMass() + Objects[j].getMass());
+                    yc = (Objects[i].getMass() * Objects[i].getYPosition() + Objects[j].getMass() * Objects[j].getYPosition()) / (Objects[i].getMass() + Objects[j].getMass());
 
                     if(Objects[i].getMass() >= Objects[j].getMass())
                     {
-                        Vx = (Objects[i].getMass() * Objects[i].getXSpeed() + Objects[j].getMass() * Objects[j].getXSpeed()) / (Objects[i].getMass() + Objects[j].getMass());
-                        Vy = (Objects[i].getMass() * Objects[i].getYSpeed() + Objects[j].getMass() * Objects[j].getYSpeed()) / (Objects[i].getMass() + Objects[j].getMass());
-
-                        xc = (Objects[i].getMass() * Objects[i].getXPosition() + Objects[j].getMass() * Objects[j].getXPosition()) / (Objects[i].getMass() + Objects[j].getMass());
-                        yc = (Objects[i].getMass() * Objects[i].getYPosition() + Objects[j].getMass() * Objects[j].getYPosition()) / (Objects[i].getMass() + Objects[j].getMass());
-
                         Objects[i].setPosition(xc, yc);
                         Objects[i].setRadius(sqrt(pow(Objects[i].getRadius(), 2) + pow(Objects[j].getRadius(), 2)));
                         Objects[i].setSpeed(Vx, Vy);
                         Objects[i].setMass(Objects[i].getMass() + Objects[j].getMass());
                         Objects[i].setQ(Objects[i].getQ() + Objects[j].getQ());
 
+                        if(i == current_index)
+                            hideAdditionalInfo = false;
 
                         deleteObject(j);
                     }
 
                     else
                     {
-                        Vx = (Objects[i].getMass() * Objects[i].getXSpeed() + Objects[j].getMass() * Objects[j].getXSpeed()) / (Objects[i].getMass() + Objects[j].getMass());
-                        Vy = (Objects[i].getMass() * Objects[i].getYSpeed() + Objects[j].getMass() * Objects[j].getYSpeed()) / (Objects[i].getMass() + Objects[j].getMass());
-
-                        xc = (Objects[i].getMass() * Objects[i].getXPosition() + Objects[j].getMass() * Objects[j].getXPosition()) / (Objects[i].getMass() + Objects[j].getMass());
-                        yc = (Objects[i].getMass() * Objects[i].getYPosition() + Objects[j].getMass() * Objects[j].getYPosition()) / (Objects[i].getMass() + Objects[j].getMass());
-
                         Objects[j].setPosition(xc, yc);
                         Objects[j].setRadius(sqrt(pow(Objects[i].getRadius(), 2) + pow(Objects[j].getRadius(), 2)));
                         Objects[j].setSpeed(Vx, Vy);
                         Objects[j].setMass(Objects[i].getMass() + Objects[j].getMass());
                         Objects[j].setQ(Objects[i].getQ() + Objects[j].getQ());
+
+                        if(j == current_index)
+                            hideAdditionalInfo = false;
 
                         deleteObject(i);
                     }
@@ -277,13 +312,12 @@ void MainWindow::ForceCalc()
     }
 
     auto end = std::chrono::steady_clock::now();
-
     auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
-
     delta = elapsed_ms.count();
 
+
     if(current_index >= 0 && current_index < Objects.size())
-    printToPanel(Objects[current_index], true);
+    printToPanel(Objects[current_index], hideAdditionalInfo);
 
     updateViewport();
 }
@@ -330,7 +364,7 @@ void MainWindow::setPause(bool val)
     }
 }
 
-void MainWindow::setFocus(int index)
+void MainWindow::setFocus(int index /*= -1*/)
 {
     current_index = index;
 
@@ -354,25 +388,27 @@ void MainWindow::setFocus(int index)
     }
 }
 
-
-
 void MainWindow::addObject()
 {
     PhObject obj;
-    if(current_pattern >= 0)
+
+    if(checkIndexValid(current_pattern, Patterns))
+    {
         obj = Patterns[current_pattern];
-    else
+    }
+
+    else //В случае отсутствия шаблона
     {
         obj.setName("Стандартный");
         Patterns.push_back(obj);
         updatePatternsList();
         current_pattern = 0;
         ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
+        ui->statusBar->showMessage("Для создания нового объекта был использован Стандартный шаблон, так как другие шаблоны отсутствуют");
         ui->deletepattern_button->setEnabled(true);
     }
 
-    obj.setName("Object");
-
+    obj.setName("Object" + QString::number(Objects.size()));
     obj.setPosition(ui->viewport->getCamX(), ui->viewport->getCamY());
     Objects.push_back(obj);
     updateList();
@@ -389,12 +425,12 @@ void MainWindow::deleteObject(int index)
 {
     QString name;
 
-    if(index >= 0 && index < Objects.size())
+    if(checkIndexValid(index, Objects))
     {
         Objects.erase(Objects.begin() + index);
 
         if(current_index == index)
-            setFocus(-1);
+            setFocus();
 
         else if(current_index > index)
         {
@@ -403,7 +439,7 @@ void MainWindow::deleteObject(int index)
         }
     }
 
-    else if(current_index < Objects.size() && current_index >= 0)
+    else if(checkIndexValid(current_index, Objects))
     {
         name = Objects[current_index].getName();
         Objects.erase(Objects.begin() + current_index);
@@ -422,13 +458,11 @@ void MainWindow::deleteObject(int index)
     updateList();
 }
 
-
-void MainWindow::printToPanel(PhObject &toPrint, bool sp)
+void MainWindow::printToPanel(PhObject &toPrint, bool sp)//sp - special. sp == true - Были изменения массы или заряда, false - не были
 {
-    double del;
+    long double del;
 
-    {
-    if(!sp)
+    if(!sp) //Вывод статичной информации
     {
     del = floor(log10(abs(toPrint.getMass())));
     if(del > 8)
@@ -440,8 +474,7 @@ void MainWindow::printToPanel(PhObject &toPrint, bool sp)
     if(toPrint.getMass() == 0)
         del = 0;
 
-
-    ui->mass_line->setText(QString::number(toPrint.getMass() / pow(10, del)));
+    ui->mass_line->setText(QString::number(double(toPrint.getMass() / pow(10, del))));
     ui->mass_mnog->blockSignals(true);
     ui->mass_mnog->setCurrentIndex(8 - del);
     ui->mass_mnog->blockSignals(false);
@@ -456,68 +489,50 @@ void MainWindow::printToPanel(PhObject &toPrint, bool sp)
     if(toPrint.getQ() == 0)
         del = 0;
 
-    ui->q_line->setText(QString::number(toPrint.getQ() / pow(10, del)));
+    ui->q_line->setText(QString::number(double(toPrint.getQ() / pow(10, del))));
     ui->q_mnog->blockSignals(true);
     ui->q_mnog->setCurrentIndex(8 - del);
     ui->q_mnog->blockSignals(false);
+
+
+    ui->name_line->setText(toPrint.getName());
+    ui->rad_line->setText(QString::number(double(toPrint.getRadius())));
+    ui->isMoveBox->blockSignals(true);
+    ui->isMoveBox->setChecked(toPrint.getStatic());
+    ui->isMoveBox->blockSignals(false);
+
+    setColorBox(toPrint);
     }
+
 
     if(pattern_mode)
     {
         ui->x_line->setText("Невозможно");
         ui->x_line->setEnabled(false);
-    }
 
-    else
-    {
-        ui->x_line->setEnabled(true);
-        ui->x_line->setText(QString::number(toPrint.getXPosition()));
-    }
-
-    if(pattern_mode)
-    {
         ui->y_line->setText("Невозможно");
         ui->y_line->setEnabled(false);
-    }
 
-    else
-    {
-        ui->y_line->setEnabled(true);
-        ui->y_line->setText(QString::number(toPrint.getYPosition()));
-    }
-
-    if(pattern_mode)
-    {
         ui->xs_line->setText("Невозможно");
         ui->xs_line->setEnabled(false);
-    }
 
-    else
-    {
-        ui->xs_line->setEnabled(true);
-        ui->xs_line->setText(QString::number(toPrint.getXSpeed()));
-    }
-
-    if(pattern_mode)
-    {
         ui->ys_line->setText("Невозможно");
         ui->ys_line->setEnabled(false);
     }
 
     else
     {
+        ui->x_line->setEnabled(true);
+        ui->x_line->setText(QString::number(double(toPrint.getXPosition())));
+
+        ui->y_line->setEnabled(true);
+        ui->y_line->setText(QString::number(double(toPrint.getYPosition())));
+
+        ui->xs_line->setEnabled(true);
+        ui->xs_line->setText(QString::number(double(toPrint.getXSpeed())));
+
         ui->ys_line->setEnabled(true);
-        ui->ys_line->setText(QString::number(toPrint.getYSpeed()));
-    }
-    }
-
-    if(!sp)
-    {
-    ui->name_line->setText(toPrint.getName());
-    ui->rad_line->setText(QString::number(toPrint.getRadius()));
-    ui->isMoveBox->setChecked(toPrint.getStatic());
-
-    setColorBox(toPrint);
+        ui->ys_line->setText(QString::number(double(toPrint.getYSpeed())));
     }
 }
 
@@ -575,7 +590,6 @@ void MainWindow::updateList()
 
     ui->count_lab->setText("Объектов: " + QString::number(Objects.size()));
 
-
     for(auto &var : Objects)
     {
         if(var.getName().isEmpty())
@@ -624,12 +638,12 @@ void MainWindow::updateViewport()
     ui->viewport->update();
 }
 
-double MainWindow::getDistance(int obj1, int obj2)
+long double MainWindow::getDistance(int obj1, int obj2)
 {
     return sqrt(pow(Objects[obj1].getXPosition() - Objects[obj2].getXPosition(), 2) + pow(Objects[obj1].getYPosition() - Objects[obj2].getYPosition(), 2));
 }
 
-void MainWindow::setConstFields()
+void MainWindow::setConstFields() //Устанавливает значение констант в полях
 {
     ui->g_line->setText(QString::number(G));
     ui->k_line->setText(QString::number(k));
@@ -660,6 +674,10 @@ void MainWindow::followToObject(PhObject &obj)
     changeCamLabel(obj.getXPosition(), obj.getYPosition());
 }
 
+bool MainWindow::checkIndexValid(int index, QVector<PhObject> &vec)
+{
+    return index >= 0 && index < vec.size();
+}
 
 void MainWindow::changeParameters()
 {
@@ -689,7 +707,6 @@ void MainWindow::changeParameters()
     }
 
 }
-
 
 void MainWindow::on_name_line_textEdited(const QString &)
 {
@@ -730,7 +747,7 @@ void MainWindow::addPattern()
 
 void MainWindow::deletePattern()
 {
-    if(current_pattern >= 0 && current_pattern < Patterns.size())
+    if(checkIndexValid(current_pattern, Patterns))
     {
 
     ui->statusBar->showMessage("Удалён шаблон: " + Patterns[current_pattern].getName());
@@ -815,7 +832,7 @@ void MainWindow::changeScaleSlot(int value)
 {
     ui->scale_slider->setValue(value);
     ui->scale_label->setText(QString::number(value) + "%");
-    ui->viewport->setScale((double)value / 100);
+    ui->viewport->setScale((long double)value / 100);
 }
 
 void MainWindow::changeCamLabel(int x, int y)
@@ -903,9 +920,17 @@ void MainWindow::makeCenter()
         var.setPosition(var.getXPosition() - ui->viewport->getCamX(), var.getYPosition() - ui->viewport->getCamY());
     }
 
+    for(auto &var : Buffer_Objects)
+    {
+        var.setPosition(var.getXPosition() - ui->viewport->getCamX(), var.getYPosition() - ui->viewport->getCamY());
+    }
+
     ui->viewport->setCamPos();
     changeCamLabel(0, 0);
     ui->statusBar->showMessage("Начало координат установлено на положение камеры");
+
+    if(checkIndexValid(current_index, Objects))
+        printToPanel(Objects[current_index]);
 
     updateViewport();
 }

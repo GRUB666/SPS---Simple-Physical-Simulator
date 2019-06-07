@@ -15,5 +15,6 @@
         <file>img/follow.png</file>
         <file>img/not_follow.png</file>
         <file>img/setcenter.png</file>
+        <file>img/Mainico.png</file>
     </qresource>
 </RCC>
