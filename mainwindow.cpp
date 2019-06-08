@@ -28,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     resize(maximumSize()); //Меняю размер
 
+    srand(time(0));
+
     //Загрузка всех кнопок-------------------------------
 
 
@@ -182,6 +184,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(keyPause, SIGNAL(activated()), this, SLOT(setPause()));
     connect(keySetCenter, SIGNAL(activated()), this, SLOT(makeCenter()));
     //------------------------------
+
+    //Дополнительные----------------
+    connect(ui->generate_action, SIGNAL(triggered()), this, SLOT(OpenGenerateWidget()));
+    //------------------------------
 }
 
 MainWindow::~MainWindow()
@@ -215,10 +221,10 @@ void MainWindow::ForceCalc()
             if(i != j && distance != 0)
             {
                 F = G * Objects[i].getMass() * Objects[j].getMass()
-                        / pow(distance, 2);
+                        / std::pow(distance, 2);
 
                 F += -k * Objects[i].getQ() * Objects[j].getQ()
-                        / pow(distance, 2);
+                        / std::pow(distance, 2);
 
 
                 angle = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
@@ -226,8 +232,8 @@ void MainWindow::ForceCalc()
 
                 QString str = QString::number((double)angle);
 
-                ax += F*std::cos(angle) / Objects[i].getMass();
-                                ay += F*std::sin(angle) / Objects[i].getMass();
+                ax += F*std::cos(angle) / abs(Objects[i].getMass());
+                ay += F*std::sin(angle) / abs(Objects[i].getMass());
             }
         }
         }
@@ -611,20 +617,37 @@ void MainWindow::dropFocus()
     }
 }
 
-QColor MainWindow::getColorBox()
+QColor getColor(int code)
 {
-    if(ui->color_box->currentIndex() == 0)
+    switch (code)
+    {
+    case 0:
         return Qt::black;
-    if(ui->color_box->currentIndex() == 1)
+        break;
+    case 1:
         return Qt::red;
-    if(ui->color_box->currentIndex() == 2)
+        break;
+    case 2:
         return Qt::green;
-    if(ui->color_box->currentIndex() == 3)
+        break;
+    case 3:
         return Qt::blue;
-    if(ui->color_box->currentIndex() == 4)
+        break;
+    case 4:
         return Qt::yellow;
+        break;
+
+    default:
+        return Qt::black;
+        break;
+    }
 
     return Qt::black;
+}
+
+QColor MainWindow::getColorBox()
+{
+    return getColor(ui->color_box->currentIndex());
 }
 
 int MainWindow::getPowerMnog(QComboBox * box)
@@ -672,6 +695,44 @@ void MainWindow::followToObject(PhObject &obj)
     ui->viewport->setCamY(obj.getYPosition());
 
     changeCamLabel(obj.getXPosition(), obj.getYPosition());
+}
+
+int getRandom(int p1, int p2)
+{
+    return p1 + rand() % (p2 - p1 + 1);
+}
+
+
+void MainWindow::randomGenerate(GeneratePattern &pattern, int count)
+{
+    PhObject obj;
+    double side_size = sqrt(count * pattern.free_space);
+    long double angle;
+
+    for(int i = 0; i < count; i++)
+    {
+        obj.setName(pattern.name + QString::number(i));
+        obj.setMass(getRandom(pattern.m1, pattern.m2));
+        obj.setQ(getRandom(pattern.q1, pattern.q2));
+
+        if(pattern.rad_auto)
+            obj.setRadius(obj.getMass() * pattern.p);
+        else
+            obj.setRadius(getRandom(pattern.rad1, pattern.rad2));
+
+        obj.setXPosition(getRandom(-side_size/2, side_size/2) + pattern.x0);
+        obj.setYPosition(getRandom(-side_size/2, side_size/2) + pattern.y0);
+        angle = std::atan2(obj.getYPosition() - pattern.y0, obj.getXPosition() - pattern.x0);
+        obj.setXSpeed(std::cos(angle) * pattern.start_speed);
+        obj.setYSpeed(std::sin(angle) * pattern.start_speed);
+        obj.setColor(pattern.colors[getRandom(0, pattern.colors.size() - 1)]);
+
+        Objects.push_back(obj);
+    }
+
+    updateList();
+    updateViewport();
+    setPause(true);
 }
 
 bool MainWindow::checkIndexValid(int index, QVector<PhObject> &vec)
@@ -933,4 +994,17 @@ void MainWindow::makeCenter()
         printToPanel(Objects[current_index]);
 
     updateViewport();
+}
+
+void MainWindow::OpenGenerateWidget()
+{
+    GeneratePattern pat;
+    bool suc;
+    int count;
+
+    GenerateWidget* win = new GenerateWidget(this, ui->viewport->getCamX(), ui->viewport->getCamY(), &suc, &pat, &count);
+    win->exec();
+
+    if(suc)
+        randomGenerate(pat, count);
 }

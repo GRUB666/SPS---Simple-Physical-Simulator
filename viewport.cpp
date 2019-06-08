@@ -9,6 +9,7 @@ void Viewport::paintEvent(QPaintEvent *)
     p.drawRect(QRect(QPoint(-width()/2, height()/2), QPoint(width()/2-2, -height()/2)));
 
     p.scale(1/distance_scale, 1/distance_scale);
+    //p.rotate(alpha);
 
     for(auto &var : ToPaintVector)
     {
@@ -38,6 +39,7 @@ void Viewport::mouseMoveEvent(QMouseEvent *p)
 {
     camX -= (p->x() - bufferX)*distance_scale;
     camY += (p->y() - bufferY)*distance_scale;
+
     update();
     emit camScrolled(camX, camY);
     bufferX = p->x();
@@ -46,6 +48,15 @@ void Viewport::mouseMoveEvent(QMouseEvent *p)
 
 void Viewport::mousePressEvent(QMouseEvent *p)
 {
+    /*if(p->buttons() == Qt::MiddleButton)
+    {
+        alpha += 90;
+        if(alpha >= 360)
+            alpha = 0;
+
+        update();
+    }*/
+
     bufferX = p->x();
     bufferY = p->y();
 }
@@ -60,6 +71,7 @@ Viewport::Viewport(QWidget *parent) : QFrame(parent)
     MAX_DISTANCE_SCALE = SCROLL_SPEED * 100;
     MIN_DISTANCE_SCALE = SCROLL_SPEED;
 
+    alpha = 0;
     CAM_SCROLL_SPEED = 100;
 }
 
@@ -114,6 +126,11 @@ double Viewport::getScrollSpeed()
 double Viewport::getScale()
 {
     return distance_scale;
+}
+
+void Viewport::setAlpha(int alpha)
+{
+    this->alpha = alpha;
 }
 
 void Viewport::setPaintVector(QVector<PhObject>& vec)

@@ -14,12 +14,17 @@
 #include <ctime>
 #include <chrono>
 #include <thread>
+#include <random>
 #include "phobject.h"
+#include "generatewidget.h"
 
 
 namespace Ui {
 class MainWindow;
 }
+
+
+
 
 class MainWindow : public QMainWindow
 {
@@ -47,13 +52,13 @@ private:
     double G, k;
     bool isPause;
     bool FullScreenMode;
+    double sim_speed;
+    int delta;
 
+public:
     bool SET_PAUSE_AFTER_CREATE;
     bool SET_PAUSE_AFTER_RESTART;
     bool FOLLOW_TO_FOCUS_OBJECT;
-
-    double sim_speed;
-    int delta;
 
 protected:
     virtual void keyPressEvent(QKeyEvent* pe);
@@ -74,11 +79,13 @@ private:
     QColor getColorBox();
     int getPowerMnog(QComboBox*);
     void updateViewport();
-    long double getDistance(int obj1, int obj2);
     void setConstFields();
     void setFullScreenMode(bool val);
-    void followToObject(PhObject& obj);
     bool checkIndexValid(int index, QVector<PhObject> &vec);
+    long double getDistance(int obj1, int obj2);
+    void followToObject(PhObject& obj);
+
+
 
 private:
     Ui::MainWindow *ui;
@@ -110,6 +117,8 @@ private slots:
    void changeFollowSetting();
    void changeFollowSetting(bool val);
    void makeCenter();
+   void OpenGenerateWidget();
+   void randomGenerate(GeneratePattern& pattern, int count);
 };
 
 #endif // MAINWINDOW_H

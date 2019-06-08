@@ -3,6 +3,20 @@
 
 #include <QColor>
 #include <QString>
+#include <QVector>
+
+struct GeneratePattern
+{
+    long double q1, q2, m1, m2;
+    double rad1, rad2;
+    int free_space;
+    double start_speed;
+    QVector<QColor> colors;
+    bool rad_auto;
+    double p;
+    QString name;
+    int x0, y0;
+};
 
 class PhObject
 {

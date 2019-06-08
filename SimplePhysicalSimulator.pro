@@ -25,17 +25,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        generatewidget.cpp \
         main.cpp \
         mainwindow.cpp \
         phobject.cpp \
         viewport.cpp
 
 HEADERS += \
+        generatewidget.h \
         mainwindow.h \
         phobject.h \
         viewport.h
 
 FORMS += \
+        generatewidget.ui \
         mainwindow.ui
 
 # Default rules for deployment.

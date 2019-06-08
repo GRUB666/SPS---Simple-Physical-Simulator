@@ -24,6 +24,7 @@ private:
     int CAM_SCROLL_SPEED;
     int bufferX, bufferY;
     double sim_speed;
+    int alpha;
 
 
 protected:
@@ -46,6 +47,7 @@ public:
     void setScale(double val);
     double getScrollSpeed();
     double getScale();
+    void setAlpha(int alpha);
 
 
     void setPaintVector(QVector<PhObject>& vec);
