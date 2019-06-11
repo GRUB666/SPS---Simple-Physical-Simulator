@@ -97,7 +97,7 @@ void Viewport::setCamY(int yp)
     update();
 }
 
-void Viewport::setCamPos(int xp, int yp)
+void Viewport::setCamPos(int xp /*= 0*/, int yp/*= 0*/)
 {
     this->camX = xp;
     this->camY = yp;

@@ -8,6 +8,10 @@
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setOrganizationName("SKY computers");
+    QCoreApplication::setOrganizationDomain("");
+    QCoreApplication::setApplicationName("Simple Physical Simulator");
+
     QApplication a(argc, argv);
     MainWindow w;
     w.showMaximized();

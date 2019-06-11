@@ -2,6 +2,7 @@
 #define GENERATEWIDGET_H
 
 #include <QDialog>
+#include <QVector>
 #include "phobject.h"
 
 namespace Ui {
@@ -14,13 +15,16 @@ class GenerateWidget : public QDialog
 
 private:
     GeneratePattern *pattern;
+    QVector<PhObject> pat_list;
     bool *succes;
     int CamX, CamY;
     int* count;
+    bool firstOut;
 
 public:
-    GenerateWidget(QWidget *parent = nullptr, int CamX = 0, int CamY = 0, bool* success = nullptr, GeneratePattern* patternn = nullptr, int* count = 0);
+    GenerateWidget(QVector<PhObject> pat_list, QWidget *parent = nullptr, bool* success = nullptr, GeneratePattern* patternn = nullptr, int* count = 0);
     ~GenerateWidget();
+    void FillFields();
 
 private slots:
     void on_radprop_clicked();
@@ -57,8 +61,15 @@ private slots:
 
     void on_count_textEdited(const QString &arg1);
 
+    void on_pushButton_2_clicked();
+
+    void on_patterns_list_currentRowChanged(int currentRow);
+
+    void on_mx_speed_line_textEdited(const QString &arg1);
+
 private:
     void setRadiusMode(bool val);
+    void fillPatternsList();
 
 private:
     Ui::GenerateWidget *ui;

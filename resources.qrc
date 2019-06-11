@@ -16,5 +16,7 @@
         <file>img/not_follow.png</file>
         <file>img/setcenter.png</file>
         <file>img/Mainico.png</file>
+        <file>img/nullspeed.png</file>
+        <file>img/clearall.png</file>
     </qresource>
 </RCC>

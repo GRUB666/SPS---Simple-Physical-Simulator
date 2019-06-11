@@ -29,17 +29,20 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         phobject.cpp \
+        settingswidget.cpp \
         viewport.cpp
 
 HEADERS += \
         generatewidget.h \
         mainwindow.h \
         phobject.h \
+        settingswidget.h \
         viewport.h
 
 FORMS += \
         generatewidget.ui \
-        mainwindow.ui
+        mainwindow.ui \
+        settingswidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

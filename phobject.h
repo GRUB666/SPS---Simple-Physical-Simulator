@@ -14,8 +14,28 @@ struct GeneratePattern
     QVector<QColor> colors;
     bool rad_auto;
     double p;
+    double max_speed;
     QString name;
     int x0, y0;
+
+    GeneratePattern()
+    {
+        q1 = 0;
+        q2 = 0;
+        m1 = 1;
+        m2 = 2;
+        rad1 = 1;
+        rad2 = 2;
+        free_space = 9000;
+        start_speed = 0;
+        max_speed = 0;
+        colors.push_back(Qt::black);
+        rad_auto = true;
+        p = 0.1;
+        name = "Object";
+        x0 = 0;
+        y0 = 0;
+    }
 };
 
 class PhObject

@@ -4,7 +4,7 @@
 #include <QValidator>
 #include <QMessageBox>
 
-GenerateWidget::GenerateWidget(QWidget *parent, int CamX, int CamY, bool* succes, GeneratePattern* pattern, int* count) :
+GenerateWidget::GenerateWidget(QVector<PhObject> pat_list, QWidget *parent, bool* succes, GeneratePattern* Sppattern, int* count) :
     QDialog(parent),
     ui(new Ui::GenerateWidget)
 {
@@ -17,14 +17,14 @@ GenerateWidget::GenerateWidget(QWidget *parent, int CamX, int CamY, bool* succes
     QRegExp rad("\\d{1,}");
 
     this->succes = succes;
-    this->pattern = pattern;
+    this->pattern = Sppattern;
     *(this->succes) = false;
     this->count = count;
     *(this->count) = 0;
+    this->pat_list = pat_list;
 
-    this->CamX = CamX;
-    this->CamY = CamY;
-    setRadiusMode(true);
+    this->CamX = Sppattern->x0;
+    this->CamY = Sppattern->y0;
 
     QValidator *massq_val = new QRegExpValidator(massq, this);
     QValidator *pfrsp_val = new QRegExpValidator(pfrsp, this);
@@ -36,6 +36,7 @@ GenerateWidget::GenerateWidget(QWidget *parent, int CamX, int CamY, bool* succes
     ui->q2->setValidator(massq_val);
 
     ui->p_line->setValidator(pfrsp_val);
+    ui->mx_speed_line->setValidator(pfrsp_val);
     ui->rad1->setValidator(rad_val);
     ui->rad2->setValidator(rad_val);
     ui->count->setValidator(rad_val);
@@ -43,7 +44,20 @@ GenerateWidget::GenerateWidget(QWidget *parent, int CamX, int CamY, bool* succes
     ui->space->setValidator(pfrsp_val);
     ui->speed->setValidator(pfrsp_val);
 
-    count = 0;
+    firstOut = true;
+
+    fillPatternsList();
+    FillFields();
+
+    connect(ui->black, SIGNAL(clicked()), this, SLOT(setColor()));
+    connect(ui->red, SIGNAL(clicked()), this, SLOT(setColor()));
+    connect(ui->green, SIGNAL(clicked()), this, SLOT(setColor()));
+    connect(ui->blue, SIGNAL(clicked()), this, SLOT(setColor()));
+    connect(ui->yellow, SIGNAL(clicked()), this, SLOT(setColor()));
+
+    ui->cam1->setText("Позиция камеры [" + QString::number(CamX) + "; " + QString::number(CamY) + "]");
+
+    resize(minimumSize());
 }
 
 
@@ -51,6 +65,56 @@ GenerateWidget::GenerateWidget(QWidget *parent, int CamX, int CamY, bool* succes
 GenerateWidget::~GenerateWidget()
 {
     delete ui;
+}
+
+void GenerateWidget::FillFields()
+{
+    setRadiusMode(pattern->rad_auto);
+    ui->lineEdit->setText(pattern->name);
+    ui->radprop->setChecked(pattern->rad_auto);
+    ui->radnprop->setChecked(!pattern->rad_auto);
+    ui->mas1->setText(QString::number((double)pattern->m1));
+    ui->mass2->setText(QString::number((double)pattern->m2));
+    ui->q1->setText(QString::number((double)pattern->q1));
+    ui->q2->setText(QString::number((double)pattern->q2));
+    ui->p_line->setText(QString::number((double)pattern->p));
+    ui->rad1->setText(QString::number((double)pattern->rad1));
+    ui->rad2->setText(QString::number((double)pattern->rad2));
+    ui->space->setText(QString::number((double)pattern->free_space));
+    ui->speed->setText(QString::number((double)pattern->start_speed));
+    ui->mx_speed_line->setText(QString::number(pattern->max_speed));
+
+    ui->black->blockSignals(true);
+    ui->red->blockSignals(true);
+    ui->green->blockSignals(true);
+    ui->blue->blockSignals(true);
+    ui->yellow->blockSignals(true);
+
+    ui->black->setChecked(false);
+    ui->red->setChecked(false);
+    ui->green->setChecked(false);
+    ui->blue->setChecked(false);
+    ui->yellow->setChecked(false);
+
+    for(auto &var : pattern->colors)
+    {
+        if(var == Qt::black)
+            ui->black->setChecked(true);
+        if(var == Qt::red)
+            ui->red->setChecked(true);
+        if(var == Qt::green)
+            ui->green->setChecked(true);
+        if(var == Qt::blue)
+            ui->blue->setChecked(true);
+        if(var == Qt::yellow)
+            ui->yellow->setChecked(true);
+    }
+
+    ui->black->blockSignals(false);
+    ui->red->blockSignals(false);
+    ui->green->blockSignals(false);
+    ui->blue->blockSignals(false);
+    ui->yellow->blockSignals(false);
 }
 
 void GenerateWidget::setRadiusMode(bool val)
@@ -67,8 +131,18 @@ void GenerateWidget::setRadiusMode(bool val)
     ui->p_line->setEnabled(val);
     ui->ed_lab->setEnabled(val);
 
-    on_rad1_textEdited(ui->rad1->text());
-    on_rad2_textEdited(ui->rad2->text());
+    ui->rad1->setText(ui->rad1->text());
+    ui->rad2->setText(ui->rad2->text());
+}
+
+void GenerateWidget::fillPatternsList()
+{
+    ui->patterns_list->blockSignals(true);
+    for(auto &var : pat_list)
+    {
+        ui->patterns_list->addItem(var.getName());
+    }
+    ui->patterns_list->blockSignals(false);
 }
 
 void GenerateWidget::on_radprop_clicked()
@@ -189,7 +263,18 @@ void GenerateWidget::on_pushButton_clicked()
 
     if(*count > 500)
     {
-        QMessageBox::warning(this, "Предупреждение", "При таком количестве объектов [" + QString::number(*count) + "] работа программы может быть нестабильна");
+        QMessageBox msgb;
+        msgb.setWindowTitle("Предупреждение");
+        msgb.setText("При таком количестве объектов [" + QString::number(*count) + "] работа программы может быть нестабильна!");
+        msgb.setInformativeText("Начать генерацию?");
+        msgb.setStandardButtons(QMessageBox::Ok | QMessageBox::No);
+        msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
+        msgb.setWindowIcon(windowIcon());
+
+        int reg = msgb.exec();
+
+        if(reg == QMessageBox::No)
+            suc = false;
     }
 
     if(pattern->m1 > pattern->m2)
@@ -210,6 +295,12 @@ void GenerateWidget::on_pushButton_clicked()
         suc = false;
     }
 
+    if(*count == 0)
+    {
+        QMessageBox::warning(this, "Предупреждение", "Количество объектов не может быть равно нулю!");
+        suc = false;
+    }
+
      *(this->succes) = suc;
 
     if(suc)
@@ -222,4 +313,48 @@ void GenerateWidget::on_pushButton_clicked()
 void GenerateWidget::on_count_textEdited(const QString &arg1)
 {
     *count = arg1.toInt();
+}
+
+void GenerateWidget::on_pushButton_2_clicked()
+{
+    *(this->succes) = false;
+    close();
+}
+
+void GenerateWidget::on_patterns_list_currentRowChanged(int currentRow)
+{
+    if(!firstOut)
+    {
+
+    pattern->name = pat_list[currentRow].getName();
+
+    pattern->m1 = pat_list[currentRow].getMass();
+    pattern->m2 = pattern->m1;
+
+    pattern->q1 = pat_list[currentRow].getQ();
+    pattern->q2 = pattern->q1;
+
+    pattern->p = pat_list[currentRow].getMass() / pat_list[currentRow].getRadius();
+    pattern->rad_auto = false;
+    pattern->rad1 = pat_list[currentRow].getRadius();
+    pattern->rad2 = pattern->rad1;
+    pattern->colors.clear();
+    pattern->colors.push_back(pat_list[currentRow].getColor());
+
+    FillFields();
+    }
+
+    else
+    {
+       ui->patterns_list->setCurrentRow(-1);
+       firstOut = false;
+    }
+
+
+
+}
+
+void GenerateWidget::on_mx_speed_line_textEdited(const QString &arg1)
+{
+    pattern->max_speed = arg1.toDouble();
 }

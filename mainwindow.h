@@ -38,6 +38,7 @@ private:
     int current_pattern;
     bool pattern_mode;
 
+
     QTimer* timer;
 
     QShortcut *keyAdd;
@@ -48,17 +49,22 @@ private:
     QShortcut *keyRestart;
     QShortcut *keyPause;
     QShortcut *keySetCenter;
+    QShortcut *keyGen;
+    QShortcut *keyFollow;
 
     double G, k;
     bool isPause;
     bool FullScreenMode;
     double sim_speed;
     int delta;
+    bool follow_to_focus_object;
+
+    int BCamX, BCamY; //Буферы положений камеры
 
 public:
     bool SET_PAUSE_AFTER_CREATE;
     bool SET_PAUSE_AFTER_RESTART;
-    bool FOLLOW_TO_FOCUS_OBJECT;
+    bool CAMERA_BUFFER_ENABLE;
 
 protected:
     virtual void keyPressEvent(QKeyEvent* pe);
@@ -84,7 +90,7 @@ private:
     bool checkIndexValid(int index, QVector<PhObject> &vec);
     long double getDistance(int obj1, int obj2);
     void followToObject(PhObject& obj);
-
+    void clearObjectsVector();
 
 
 private:
@@ -117,8 +123,11 @@ private slots:
    void changeFollowSetting();
    void changeFollowSetting(bool val);
    void makeCenter();
+   void makeNullSpeed();
    void OpenGenerateWidget();
    void randomGenerate(GeneratePattern& pattern, int count);
+   void changeFullScreenMode();
+   void clearAllObjectsSlot();
 };
 
 #endif // MAINWINDOW_H

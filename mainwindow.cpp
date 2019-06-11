@@ -4,11 +4,6 @@
 
 void MainWindow::keyPressEvent(QKeyEvent *pe)
 {
-    if(pe->key() == 16777274) //16777274 - F11
-    {
-        setFullScreenMode(!FullScreenMode);
-    }
-
     if(pe->key() == 16777216 && FullScreenMode) //16777216 - Ecs
     {
         setFullScreenMode(false);
@@ -29,12 +24,9 @@ MainWindow::MainWindow(QWidget *parent) :
     resize(maximumSize()); //Меняю размер
 
     srand(time(0));
-
-    //Загрузка всех кнопок-------------------------------
-
-
     setWindowIcon(QIcon(QPixmap(":/img/Mainico.png")));
 
+    //Загрузка всех кнопок-------------------------------
     ui->statusBar->showMessage("Приложение загружено");
     ui->add_button->setIcon(QIcon(QPixmap(":/img/img/plus.png")));
     ui->delete_button->setIcon(QIcon(QPixmap("://img/krest.png")));
@@ -44,42 +36,50 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->checkpoint_button->setIcon(QIcon(QPixmap("://img/checkpoint.png")));
     ui->set_center_button->setIcon(QIcon(QPixmap(":/img/setcenter.png")));
     ui->restart_button->setIcon(QIcon(QPixmap("://img/restart.png")));
+    ui->nullspeed_button->setIcon(QIcon(QPixmap(":/img/nullspeed.png")));
+    ui->clearall_button->setIcon(QIcon(QPixmap(":/img/clearall.png")));
     ui->addpattern_button->setIcon(ui->add_button->icon());
     ui->deletepattern_button->setIcon(ui->delete_button->icon());
 
-    ui->add_button->setToolTip("Создать новый объект");
-    ui->delete_button->setToolTip("Удалить выбранный объект");
-    ui->to_center_button->setToolTip("Переместить камеру в центр");
-    ui->to_center_button_2->setToolTip("Установить масштаб на 100%");
-    ui->checkpoint_button->setToolTip("Установить точку возврата");
+    ui->add_button->setToolTip("Создать новый объект CTRL+A");
+    ui->delete_button->setToolTip("Удалить выбранный объект CTRL+D");
+    ui->to_center_button->setToolTip("Переместить камеру в центр CTRL+C");
+    ui->to_center_button_2->setToolTip("Установить масштаб на 100% CTRL+L");
+    ui->checkpoint_button->setToolTip("Установить точку возврата CTRL+F");
     ui->addpattern_button->setToolTip("Создать шаблон");
     ui->deletepattern_button->setToolTip("Удалить выбранный шаблон");
-    ui->set_center_button->setToolTip("Сделать положение камеры началом координат");
+    ui->set_center_button->setToolTip("Сделать положение камеры началом координат CTRL+X");
+    ui->pause_button->setToolTip("Запуск симуляции CTRL+TAB");
+    ui->nullspeed_button->setToolTip("Сделать скорость выбранного объекта мировой скоростью CTRL+V");
+    ui->clearall_button->setToolTip("Удалить все объекты CTRL+ALT+D");
+    ui->restart_button->setToolTip("Запустить с последней точки возврата CTRL+R");
 
     //Установка горячих клавиш---------------------------------
-    keyAdd = new QShortcut(this);
-    keyAdd->setKey(Qt::CTRL + Qt::Key_A);
+    ui->add_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_A));
 
-    keyDelete = new QShortcut(this);
-    keyDelete->setKey(Qt::CTRL + Qt::Key_D);
+    ui->delete_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_D));
 
-    keyCenter = new QShortcut(this);
-    keyCenter->setKey(Qt::CTRL + Qt::Key_C);
+    ui->to_center_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
 
-    keyScale = new QShortcut(this);
-    keyScale->setKey(Qt::CTRL + Qt::Key_L);
+    ui->to_center_button_2->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
 
-    keyCheckPoint = new QShortcut(this);
-    keyCheckPoint->setKey(Qt::CTRL + Qt::Key_F);
+    ui->checkpoint_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F));
 
-    keyRestart = new QShortcut(this);
-    keyRestart->setKey(Qt::CTRL + Qt::Key_R);
+    ui->restart_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
 
-    keyPause = new QShortcut(this);
-    keyPause->setKey(Qt::CTRL + Qt::Key_Tab);
+    ui->pause_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Tab));
 
-    keySetCenter = new QShortcut(this);
-    keySetCenter->setKey(Qt::CTRL + Qt::Key_X);
+    ui->set_center_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_X));
+
+    ui->follow_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_CapsLock));
+
+    ui->nullspeed_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_V));
+
+    ui->clearall_button->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_D));
+
+    ui->generate_action->setShortcut(QKeySequence("CTRL+G"));
+
+    ui->fullsreen_act->setShortcut(QKeySequence("F11"));
     //----------------------------------------------
 
 
@@ -92,6 +92,22 @@ MainWindow::MainWindow(QWidget *parent) :
     setPatternMode(false);
     //--------------------
 
+
+    //Установка настроек приложения--------------
+    SET_PAUSE_AFTER_CREATE = true;
+    SET_PAUSE_AFTER_RESTART = true;
+    CAMERA_BUFFER_ENABLE = true;
+    changeFollowSetting(false);
+    FullScreenMode = false;
+    sim_speed = 0.01;
+    BCamX = 0;
+    BCamY = 0;
+    delta = 0;
+    G = 1;
+    k = 1;
+    setConstFields();
+    //----------------------
+
     //Настройка параметров графического вывода
     ui->viewport->setScrollSpeed(0.05);
     ui->scale_slider->setMaximum(ui->viewport->getScrollSpeed()*10000);
@@ -100,7 +116,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //--------------------------
 
     //Таймер приложения, установка фокуса на -1
-    timer = new QTimer;
+    timer = new QTimer(this);
     timer->setInterval(0);
     setPause(true);
     setFocus(-1);
@@ -121,18 +137,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->k_line->setValidator(validator);
     //---------------------------
 
-    //Установка настроек приложения--------------
-
-    SET_PAUSE_AFTER_CREATE = true;
-    SET_PAUSE_AFTER_RESTART = true;
-    changeFollowSetting(false);
-    FullScreenMode = false;
-    sim_speed = 0.01;
-    delta = 0;
-    G = 1;
-    k = 1;
-    setConstFields();
-    //----------------------
 
     //Соединение сигналов и слотов--------------------------------------------
 
@@ -147,8 +151,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->checkpoint_button, SIGNAL(clicked()), this, SLOT(setBuffer()));
     connect(ui->follow_button, SIGNAL(clicked()), this, SLOT(changeFollowSetting()));
     connect(ui->set_center_button, SIGNAL(clicked()), this, SLOT(makeCenter()));
+    connect(ui->nullspeed_button, SIGNAL(clicked()), this, SLOT(makeNullSpeed()));
     connect(ui->addpattern_button, SIGNAL(clicked()), this, SLOT(addPattern()));
     connect(ui->deletepattern_button, SIGNAL(clicked()), this, SLOT(deletePattern()));
+    connect(ui->clearall_button, SIGNAL(clicked()), this, SLOT(clearAllObjectsSlot()));
     //---------------------------------
 
     //Текстовые поля и ComboBox-----------
@@ -174,19 +180,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
     //-------------------------------------------
 
-    //Сочетания клавиш-------------
-    connect(keyAdd, SIGNAL(activated()), this, SLOT(addObject()));
-    connect(keyDelete, SIGNAL(activated()), this, SLOT(deleteObject()));
-    connect(keyCenter, SIGNAL(activated()), this, SLOT(moveCameraToCenter()));
-    connect(keyScale, SIGNAL(activated()), this, SLOT(dropCameraScale()));
-    connect(keyCheckPoint, SIGNAL(activated()), this, SLOT(setBuffer()));
-    connect(keyRestart, SIGNAL(activated()), this, SLOT(Restart()));
-    connect(keyPause, SIGNAL(activated()), this, SLOT(setPause()));
-    connect(keySetCenter, SIGNAL(activated()), this, SLOT(makeCenter()));
-    //------------------------------
-
     //Дополнительные----------------
     connect(ui->generate_action, SIGNAL(triggered()), this, SLOT(OpenGenerateWidget()));
+    connect(ui->fullsreen_act, SIGNAL(triggered()), this, SLOT(changeFullScreenMode()));
     //------------------------------
 }
 
@@ -261,7 +257,7 @@ void MainWindow::ForceCalc()
 
         begin = std::chrono::steady_clock::now();
 
-        if(FOLLOW_TO_FOCUS_OBJECT && Objects[i].getFocus())
+        if(follow_to_focus_object && Objects[i].getFocus())
             followToObject(Objects[i]);
         }
 
@@ -287,6 +283,9 @@ void MainWindow::ForceCalc()
 
                     if(Objects[i].getMass() >= Objects[j].getMass())
                     {
+                        if(Objects[i].getMass() == Objects[j].getMass() && Objects[i].getQ() == -Objects[j].getQ() && Objects[i].getQ() != 0)
+                            Objects[i].setColor(Qt::black);
+
                         Objects[i].setPosition(xc, yc);
                         Objects[i].setRadius(sqrt(pow(Objects[i].getRadius(), 2) + pow(Objects[j].getRadius(), 2)));
                         Objects[i].setSpeed(Vx, Vy);
@@ -332,14 +331,27 @@ void MainWindow::setPause()
 {
     setPause(!isPause);
     if(isPause)
-    ui->statusBar->showMessage("Симуляция приостановлена");
+    {
+        ui->statusBar->showMessage("Симуляция приостановлена");
+    }
+
     else
-    ui->statusBar->showMessage("Симуляция запущена");
+    {
+        ui->statusBar->showMessage("Симуляция запущена");
+    }
+
 }
 
 void MainWindow::Restart()
 {
     Objects = Buffer_Objects;
+    if(CAMERA_BUFFER_ENABLE)
+    {
+        ui->viewport->setCamX(BCamX);
+        ui->viewport->setCamY(BCamY);
+
+        changeCamLabel(BCamX, BCamY);
+    }
     setFocus();
     updateList();
     ui->delete_button->setEnabled(false);
@@ -360,6 +372,7 @@ void MainWindow::setPause(bool val)
         ui->viewport->setStyleSheet("#viewport { border: 5px solid red; }");
         ui->pause_button->setIcon(QIcon(QPixmap("://img/start.png")));
         timer->stop();
+        ui->pause_button->setToolTip("Запуск симуляции CTRL+TAB");
     }
 
     else
@@ -367,6 +380,7 @@ void MainWindow::setPause(bool val)
         ui->viewport->setStyleSheet("#viewport { border: 0px solid black; }");
         ui->pause_button->setIcon(QIcon(QPixmap("://img/stop.png")));
         timer->start(0);
+        ui->pause_button->setToolTip("Остановить симуляцию CTRL+TAB");
     }
 }
 
@@ -414,7 +428,7 @@ void MainWindow::addObject()
         ui->deletepattern_button->setEnabled(true);
     }
 
-    obj.setName("Object" + QString::number(Objects.size()));
+    obj.setName(obj.getName() + " " + QString::number(Objects.size()));
     obj.setPosition(ui->viewport->getCamX(), ui->viewport->getCamY());
     Objects.push_back(obj);
     updateList();
@@ -689,12 +703,57 @@ void MainWindow::setFullScreenMode(bool val)
     }
 }
 
+void MainWindow::changeFullScreenMode()
+{
+    setFullScreenMode(!isFullScreen());
+}
+
+void MainWindow::clearAllObjectsSlot()
+{
+    bool tmpPause = isPause;
+
+    if(Objects.size() > 0)
+    {
+    QMessageBox msgb;
+    msgb.setWindowTitle("Внимание!");
+    msgb.setText("Вы собираетесь удалить все объекты в текущей модели");
+    msgb.setInformativeText("Вы действительно хотите удалить все объекты?");
+    msgb.setStandardButtons(QMessageBox::Ok | QMessageBox::No);
+    msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
+    msgb.setWindowIcon(windowIcon());
+
+    setPause(true);
+    int result = msgb.exec();
+    setPause(tmpPause);
+
+    if(result == QMessageBox::Ok)
+    {
+        clearObjectsVector();
+        ui->statusBar->showMessage("Все объекты были удалены");
+        setFocus();
+    }
+    }
+
+    else
+    {
+        ui->statusBar->showMessage("Невозможно удалить объекты, так как их список пуст!");
+    }
+}
+
 void MainWindow::followToObject(PhObject &obj)
 {
     ui->viewport->setCamX(obj.getXPosition());
     ui->viewport->setCamY(obj.getYPosition());
 
     changeCamLabel(obj.getXPosition(), obj.getYPosition());
+}
+
+void MainWindow::clearObjectsVector()
+{
+    Objects.clear();
+
+    updateList();
+    updateViewport();
 }
 
 int getRandom(int p1, int p2)
@@ -711,7 +770,7 @@ void MainWindow::randomGenerate(GeneratePattern &pattern, int count)
 
     for(int i = 0; i < count; i++)
     {
-        obj.setName(pattern.name + QString::number(i));
+        obj.setName(pattern.name + " " + QString::number(i));
         obj.setMass(getRandom(pattern.m1, pattern.m2));
         obj.setQ(getRandom(pattern.q1, pattern.q2));
 
@@ -723,8 +782,8 @@ void MainWindow::randomGenerate(GeneratePattern &pattern, int count)
         obj.setXPosition(getRandom(-side_size/2, side_size/2) + pattern.x0);
         obj.setYPosition(getRandom(-side_size/2, side_size/2) + pattern.y0);
         angle = std::atan2(obj.getYPosition() - pattern.y0, obj.getXPosition() - pattern.x0);
-        obj.setXSpeed(std::cos(angle) * pattern.start_speed);
-        obj.setYSpeed(std::sin(angle) * pattern.start_speed);
+        obj.setXSpeed(std::cos(angle) * pattern.start_speed + getRandom(-pattern.max_speed*10, pattern.max_speed*10)/10);
+        obj.setYSpeed(std::sin(angle) * pattern.start_speed + getRandom(-pattern.max_speed*10, pattern.max_speed*10)/10);
         obj.setColor(pattern.colors[getRandom(0, pattern.colors.size() - 1)]);
 
         Objects.push_back(obj);
@@ -754,6 +813,8 @@ void MainWindow::changeParameters()
 
     if(Objects[current_index].getMass() == 0)
         ui->statusBar->showMessage("Внимание! Для объектов с нулевой массой не будут просчитываться силы");
+    if(Objects[current_index].getStatic())
+        Objects[current_index].setSpeed(0, 0);
 
     updateViewport();
     }
@@ -916,6 +977,8 @@ void MainWindow::dropCameraScale()
 
 void MainWindow::setBuffer()
 {
+    BCamX = ui->viewport->getCamX();
+    BCamY = ui->viewport->getCamY();
     Buffer_Objects = Objects;
     ui->statusBar->showMessage("Установлена новая точка возврата");
 }
@@ -942,35 +1005,35 @@ void MainWindow::on_ListObjects_doubleClicked(const QModelIndex &index)
 
 void MainWindow::changeFollowSetting()
 {
-    FOLLOW_TO_FOCUS_OBJECT = !FOLLOW_TO_FOCUS_OBJECT;
+    follow_to_focus_object = !follow_to_focus_object;
 
-    if(FOLLOW_TO_FOCUS_OBJECT)
+    if(follow_to_focus_object)
     {
         ui->follow_button->setIcon(QIcon(QPixmap(":/img/not_follow.png")));
-        ui->follow_button->setToolTip("Не следить за выбранным объектом");
+        ui->follow_button->setToolTip("Не следить за выбранным объектом CTRL+CAPSLOCK");
     }
 
     else
     {
         ui->follow_button->setIcon(QIcon(QPixmap(":/img/follow.png")));
-        ui->follow_button->setToolTip("Следить за выбранным объектом");
+        ui->follow_button->setToolTip("Следить за выбранным объектом CTRL+CAPSLOCK");
     }
 }
 
 void MainWindow::changeFollowSetting(bool val)
 {
-    FOLLOW_TO_FOCUS_OBJECT = val;
+    follow_to_focus_object = val;
 
-    if(FOLLOW_TO_FOCUS_OBJECT)
+    if(follow_to_focus_object)
     {
         ui->follow_button->setIcon(QIcon(QPixmap(":/img/not_follow.png")));
-        ui->follow_button->setToolTip("Не следить за выбранным объектом");
+        ui->follow_button->setToolTip("Не следить за выбранным объектом CTRL+CAPSLOCK");
     }
 
     else
     {
         ui->follow_button->setIcon(QIcon(QPixmap(":/img/follow.png")));
-        ui->follow_button->setToolTip("Следить за выбранным объектом");
+        ui->follow_button->setToolTip("Следить за выбранным объектом CTRL+CAPSLOCK");
     }
 }
 
@@ -986,6 +1049,9 @@ void MainWindow::makeCenter()
         var.setPosition(var.getXPosition() - ui->viewport->getCamX(), var.getYPosition() - ui->viewport->getCamY());
     }
 
+    BCamX -= ui->viewport->getCamX();
+    BCamY -= ui->viewport->getCamY();
+
     ui->viewport->setCamPos();
     changeCamLabel(0, 0);
     ui->statusBar->showMessage("Начало координат установлено на положение камеры");
@@ -996,13 +1062,43 @@ void MainWindow::makeCenter()
     updateViewport();
 }
 
+void MainWindow::makeNullSpeed()
+{
+    if(checkIndexValid(current_index, Objects))
+    {
+        long double dx = Objects[current_index].getXSpeed();
+        long double dy = Objects[current_index].getYSpeed();
+
+        for(auto &var : Objects)
+        {
+            var.setSpeed(var.getXSpeed() - dx, var.getYSpeed() - dy);
+        }
+
+        ui->statusBar->showMessage("Мировая скорость равняется скорости объекта: " + Objects[current_index].getName());
+
+        if(checkIndexValid(current_index, Objects))
+            printToPanel(Objects[current_index]);
+
+        updateViewport();
+    }
+
+    else
+    {
+        ui->statusBar->showMessage("Невозможно установить новую мировую скорость, так как ни один объект не выбран!");
+    }
+
+
+}
+
 void MainWindow::OpenGenerateWidget()
 {
     GeneratePattern pat;
+    pat.x0 = ui->viewport->getCamX();
+    pat.y0 = ui->viewport->getCamY();
     bool suc;
     int count;
 
-    GenerateWidget* win = new GenerateWidget(this, ui->viewport->getCamX(), ui->viewport->getCamY(), &suc, &pat, &count);
+    GenerateWidget* win = new GenerateWidget(Patterns, this, &suc, &pat, &count);
     win->exec();
 
     if(suc)
