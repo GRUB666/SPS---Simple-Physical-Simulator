@@ -15,15 +15,19 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include <QDir>
+#include <QCoreApplication>
 #include "phobject.h"
 #include "generatewidget.h"
+#include "settingswidget.h"
+#include "simulationstate.h"
+#include "settings.h"
+
 
 
 namespace Ui {
 class MainWindow;
 }
-
-
 
 
 class MainWindow : public QMainWindow
@@ -38,6 +42,8 @@ private:
     int current_pattern;
     bool pattern_mode;
 
+
+    QString settings_way;
 
     QTimer* timer;
 
@@ -58,13 +64,16 @@ private:
     double sim_speed;
     int delta;
     bool follow_to_focus_object;
+    CollisionMode Current_Collision_Mode;
+    QColor Current_Background_Color;
 
     int BCamX, BCamY; //Буферы положений камеры
 
-public:
-    bool SET_PAUSE_AFTER_CREATE;
-    bool SET_PAUSE_AFTER_RESTART;
-    bool CAMERA_BUFFER_ENABLE;
+    //Настройки
+private:
+    SimulationState Simulation_State;
+    Settings Programm_Settings;
+
 
 protected:
     virtual void keyPressEvent(QKeyEvent* pe);
@@ -89,8 +98,11 @@ private:
     void setFullScreenMode(bool val);
     bool checkIndexValid(int index, QVector<PhObject> &vec);
     long double getDistance(int obj1, int obj2);
+    long double getDistance(double px, double py, PhObject& obj);
     void followToObject(PhObject& obj);
     void clearObjectsVector();
+    void loadSettings();
+    void saveSettings();
 
 
 private:
@@ -128,6 +140,7 @@ private slots:
    void randomGenerate(GeneratePattern& pattern, int count);
    void changeFullScreenMode();
    void clearAllObjectsSlot();
+   void OpenSettings();
 };
 
 #endif // MAINWINDOW_H

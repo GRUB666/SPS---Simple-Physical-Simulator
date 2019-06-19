@@ -18,11 +18,10 @@ private:
     QColor background_color;
     double camX, camY;
     double distance_scale;
-    int MAX_DISTANCE_SCALE;
-    int MIN_DISTANCE_SCALE;
+    double MAX_DISTANCE_SCALE;
+    double MIN_DISTANCE_SCALE;
     double SCROLL_SPEED;
-    int CAM_SCROLL_SPEED;
-    int bufferX, bufferY;
+    double bufferX, bufferY;
     double sim_speed;
     int alpha;
 
@@ -48,7 +47,13 @@ public:
     double getScrollSpeed();
     double getScale();
     void setAlpha(int alpha);
+    void setBackgroundColor(QColor color);
 
+    double* getPointerCamX();
+    double* getPointerCamY();
+
+
+    QColor* getBackgroundcolorPointer() { return &background_color; }
 
     void setPaintVector(QVector<PhObject>& vec);
 

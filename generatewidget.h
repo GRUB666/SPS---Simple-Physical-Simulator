@@ -24,7 +24,10 @@ private:
 public:
     GenerateWidget(QVector<PhObject> pat_list, QWidget *parent = nullptr, bool* success = nullptr, GeneratePattern* patternn = nullptr, int* count = 0);
     ~GenerateWidget();
+
+private:
     void FillFields();
+
 
 private slots:
     void on_radprop_clicked();
@@ -67,9 +70,15 @@ private slots:
 
     void on_mx_speed_line_textEdited(const QString &arg1);
 
+    void on_all_colors_stateChanged(int arg1);
+
+    void on_tangentum_speed_textEdited(const QString &arg1);
+
 private:
     void setRadiusMode(bool val);
     void fillPatternsList();
+    void blockColorsSignals(bool val);
+    void printColors();
 
 private:
     Ui::GenerateWidget *ui;

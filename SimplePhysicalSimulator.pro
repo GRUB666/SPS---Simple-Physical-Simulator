@@ -29,14 +29,18 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         phobject.cpp \
+        settings.cpp \
         settingswidget.cpp \
+        simulationstate.cpp \
         viewport.cpp
 
 HEADERS += \
         generatewidget.h \
         mainwindow.h \
         phobject.h \
+        settings.h \
         settingswidget.h \
+        simulationstate.h \
         viewport.h
 
 FORMS += \

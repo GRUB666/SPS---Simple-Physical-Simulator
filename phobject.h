@@ -15,6 +15,7 @@ struct GeneratePattern
     bool rad_auto;
     double p;
     double max_speed;
+    double tangentum_speed;
     QString name;
     int x0, y0;
 
@@ -31,7 +32,7 @@ struct GeneratePattern
         max_speed = 0;
         colors.push_back(Qt::black);
         rad_auto = true;
-        p = 0.1;
+        p = 1;
         name = "Object";
         x0 = 0;
         y0 = 0;

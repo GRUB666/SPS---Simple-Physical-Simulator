@@ -12,7 +12,7 @@ GenerateWidget::GenerateWidget(QVector<PhObject> pat_list, QWidget *parent, bool
 
     ui->free_lab->setToolTip("Средняя площадь для одного объекта");
 
-    QRegExp massq("\\-?\\d{1,}");
+    QRegExp massq("\\-?\\d{1,}\\.?\\d{1,}");
     QRegExp pfrsp("\\d{1,}\\.?\\d{1,}");
     QRegExp rad("\\d{1,}");
 
@@ -36,13 +36,27 @@ GenerateWidget::GenerateWidget(QVector<PhObject> pat_list, QWidget *parent, bool
     ui->q2->setValidator(massq_val);
 
     ui->p_line->setValidator(pfrsp_val);
-    ui->mx_speed_line->setValidator(pfrsp_val);
-    ui->rad1->setValidator(rad_val);
-    ui->rad2->setValidator(rad_val);
+
+    ui->rad1->setValidator(pfrsp_val);
+    ui->rad2->setValidator(pfrsp_val);
     ui->count->setValidator(rad_val);
 
+    ui->free_lab->setToolTip("Пространство, которое в среднем выделяется под один объект (Определяет среднее растояние до других объектов)");
+    ui->max_speed_lab->setToolTip("Максимальное значение случайной начальной скорости в случайном направлении");
+    ui->rad_speed_lab->setToolTip("Начальная скорость, с которой объект отдаляется от центра (Эффект большого взрыва)");
+    ui->tang_speed_lab->setToolTip("Начальная скорость, с которой объект движется вокруг центра (Эффект вихря)");
+    ui->center_lab->setToolTip("Точка, вокруг которой будет происходить генерация");
+    ui->base_name_lab->setToolTip("Базовое имя, с которым будут создаваться новые объекты");
+    ui->mass_lab->setToolTip("Введите в поле [От] минимальное значение массы объекта, а в поле [До] максимальное значение (Масса не может быть равна нулю!)");
+    ui->q_lab->setToolTip("Введите в поле [От] минимальное значение заряда объекта, а в поле [До] максимальное значение");
+    ui->radprop->setToolTip("Значение радиуса будет зависеть от массы, с коэфициентом пропорциональности, указанным ниже (MASS x P)");
+    ui->radnprop->setToolTip("Значение радиуса будет генерироваться случайно в обозначенных ниже пределах (Видимый размер объекта не будет коррелировать с его массой)");
+    ui->rad_lab->setToolTip("Введите в поле [От] минимальное значение радиуса объекта, а в поле [До] максимальное значение (Радиус должен быть больше нуля!)");
+
     ui->space->setValidator(pfrsp_val);
+    ui->mx_speed_line->setValidator(pfrsp_val);
     ui->speed->setValidator(pfrsp_val);
+    ui->tangentum_speed->setValidator(pfrsp_val);
 
     firstOut = true;
 
@@ -57,7 +71,7 @@ GenerateWidget::GenerateWidget(QVector<PhObject> pat_list, QWidget *parent, bool
 
     ui->cam1->setText("Позиция камеры [" + QString::number(CamX) + "; " + QString::number(CamY) + "]");
 
-    resize(minimumSize());
+   // resize(minimumSize());
 }
 
 
@@ -70,6 +84,7 @@ GenerateWidget::~GenerateWidget()
 void GenerateWidget::FillFields()
 {
     setRadiusMode(pattern->rad_auto);
+
     ui->lineEdit->setText(pattern->name);
     ui->radprop->setChecked(pattern->rad_auto);
     ui->radnprop->setChecked(!pattern->rad_auto);
@@ -84,37 +99,7 @@ void GenerateWidget::FillFields()
     ui->speed->setText(QString::number((double)pattern->start_speed));
     ui->mx_speed_line->setText(QString::number(pattern->max_speed));
 
-    ui->black->blockSignals(true);
-    ui->red->blockSignals(true);
-    ui->green->blockSignals(true);
-    ui->blue->blockSignals(true);
-    ui->yellow->blockSignals(true);
-
-    ui->black->setChecked(false);
-    ui->red->setChecked(false);
-    ui->green->setChecked(false);
-    ui->blue->setChecked(false);
-    ui->yellow->setChecked(false);
-
-    for(auto &var : pattern->colors)
-    {
-        if(var == Qt::black)
-            ui->black->setChecked(true);
-        if(var == Qt::red)
-            ui->red->setChecked(true);
-        if(var == Qt::green)
-            ui->green->setChecked(true);
-        if(var == Qt::blue)
-            ui->blue->setChecked(true);
-        if(var == Qt::yellow)
-            ui->yellow->setChecked(true);
-    }
-
-    ui->black->blockSignals(false);
-    ui->red->blockSignals(false);
-    ui->green->blockSignals(false);
-    ui->blue->blockSignals(false);
-    ui->yellow->blockSignals(false);
+    printColors();
 }
 
 void GenerateWidget::setRadiusMode(bool val)
@@ -145,6 +130,59 @@ void GenerateWidget::fillPatternsList()
     ui->patterns_list->blockSignals(false);
 }
 
+void GenerateWidget::blockColorsSignals(bool val)
+{
+    ui->black->blockSignals(val);
+    ui->red->blockSignals(val);
+    ui->green->blockSignals(val);
+    ui->blue->blockSignals(val);
+    ui->yellow->blockSignals(val);
+    ui->all_colors->blockSignals(val);
+}
+
+void GenerateWidget::printColors()
+{
+    blockColorsSignals(true);
+
+    ui->black->setChecked(false);
+    ui->red->setChecked(false);
+    ui->green->setChecked(false);
+    ui->blue->setChecked(false);
+    ui->yellow->setChecked(false);
+    ui->all_colors->setChecked(false);
+
+    bool sp = true;
+
+    for(auto &var : pattern->colors)
+    {
+        if(var == Qt::black)
+            ui->black->setChecked(true);
+        else
+            sp = false;
+        if(var == Qt::red)
+            ui->red->setChecked(true);
+        else
+            sp = false;
+        if(var == Qt::green)
+            ui->green->setChecked(true);
+        else
+            sp = false;
+        if(var == Qt::blue)
+            ui->blue->setChecked(true);
+        else
+            sp = false;
+        if(var == Qt::yellow)
+            ui->yellow->setChecked(true);
+        else
+            sp = false;
+
+        if(sp)
+            ui->all_colors->setChecked(true);
+    }
+
+    blockColorsSignals(false);
+}
+
 void GenerateWidget::on_radprop_clicked()
 {
     setRadiusMode(ui->radprop->isChecked());
@@ -162,22 +200,22 @@ void GenerateWidget::on_lineEdit_textEdited(const QString &arg1)
 
 void GenerateWidget::on_mas1_textEdited(const QString &arg1)
 {
-    pattern->m1 = arg1.toInt();
+    pattern->m1 = arg1.toDouble();
 }
 
 void GenerateWidget::on_mass2_textEdited(const QString &arg1)
 {
-    pattern->m2 = arg1.toInt();
+    pattern->m2 = arg1.toDouble();
 }
 
 void GenerateWidget::on_q1_textEdited(const QString &arg1)
 {
-    pattern->q1 = arg1.toInt();
+    pattern->q1 = arg1.toDouble();
 }
 
 void GenerateWidget::on_q2_textEdited(const QString &arg1)
 {
-    pattern->q2 = arg1.toInt();
+    pattern->q2 = arg1.toDouble();
 }
 
 void GenerateWidget::on_p_line_textEdited(const QString &arg1)
@@ -187,12 +225,12 @@ void GenerateWidget::on_p_line_textEdited(const QString &arg1)
 
 void GenerateWidget::on_rad1_textEdited(const QString &arg1)
 {
-    pattern->rad1 = arg1.toInt();
+    pattern->rad1 = arg1.toDouble();
 }
 
 void GenerateWidget::on_rad2_textEdited(const QString &arg1)
 {
-    pattern->rad2 = arg1.toInt();
+    pattern->rad2 = arg1.toDouble();
 }
 
 void GenerateWidget::on_space_textEdited(const QString &arg1)
@@ -277,6 +315,12 @@ void GenerateWidget::on_pushButton_clicked()
             suc = false;
     }
 
+    if(pattern->m1 == 0 || pattern->m2 == 0)
+    {
+        QMessageBox::warning(this, "Предупреждение", "Значение массы не может быть равно нулю!");
+        suc = false;
+    }
+
     if(pattern->m1 > pattern->m2)
     {
         QMessageBox::warning(this, "Предупреждение", "Верхний предел массы не может быть меньше нижнего!");
@@ -286,6 +330,13 @@ void GenerateWidget::on_pushButton_clicked()
     if(pattern->q1 > pattern->q2)
     {
         QMessageBox::warning(this, "Предупреждение", "Верхний предел заряда не может быть меньше нижнего!");
+        suc = false;
+    }
+
+
+    if(pattern->rad1 <= 0 || pattern->rad2 <= 0)
+    {
+        QMessageBox::warning(this, "Предупреждение", "Значение радиуса не может быть равно нулю или быть меньше него!");
         suc = false;
     }
 
@@ -305,9 +356,12 @@ void GenerateWidget::on_pushButton_clicked()
 
     if(suc)
     {
+        if(pattern->rad1 < 0.1)
+            pattern->rad1 = 0.1;
+        if(pattern->rad2 < 0.1)
+            pattern->rad2 = 0.1;
        close();
     }
-
 }
 
 void GenerateWidget::on_count_textEdited(const QString &arg1)
@@ -349,12 +403,29 @@ void GenerateWidget::on_patterns_list_currentRowChanged(int currentRow)
        ui->patterns_list->setCurrentRow(-1);
        firstOut = false;
     }
-
-
-
 }
 
 void GenerateWidget::on_mx_speed_line_textEdited(const QString &arg1)
 {
     pattern->max_speed = arg1.toDouble();
+}
+
+void GenerateWidget::on_all_colors_stateChanged(int arg1)
+{
+    blockColorsSignals(true);
+
+    ui->black->setChecked(ui->all_colors->isChecked());
+    ui->red->setChecked(ui->all_colors->isChecked());
+    ui->blue->setChecked(ui->all_colors->isChecked());
+    ui->green->setChecked(ui->all_colors->isChecked());
+    ui->yellow->setChecked(ui->all_colors->isChecked());
+
+    blockColorsSignals(false);
+
+    setColor();
+}
+
+void GenerateWidget::on_tangentum_speed_textEdited(const QString &arg1)
+{
+    pattern->tangentum_speed = ui->tangentum_speed->text().toDouble();
 }

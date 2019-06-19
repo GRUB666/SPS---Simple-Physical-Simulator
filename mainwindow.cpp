@@ -13,6 +13,14 @@ void MainWindow::keyPressEvent(QKeyEvent *pe)
     {
         deleteObject();
     }
+
+    /*if(pe->key() == Qt::Key_0)
+    {
+        for(auto &var : Objects)
+        {
+            var.setSpeed(-var.getXSpeed(), - var.getYSpeed());
+        }
+    }*/
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -21,7 +29,33 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    resize(maximumSize()); //Меняю размер
+
+    //Установка настроек приложения--------------
+    settings_way = QCoreApplication::applicationDirPath() + "/Settings/Settings.st";
+
+    loadSettings();
+
+    Current_Collision_Mode = Programm_Settings.COLLISION_MODE;
+    ui->viewport->setBackgroundColor(Programm_Settings.BACKGROUND_COLOR);
+    this->G = Programm_Settings.G;
+    this->k = Programm_Settings.K;
+    this->FullScreenMode = Programm_Settings.OPEN_FULLSCREEN;
+
+    Simulation_State = SimulationState(&G, &k, &Current_Collision_Mode,
+                             ui->viewport->getBackgroundcolorPointer(),
+                             ui->viewport->getPointerCamX(), ui->viewport->getPointerCamY(), &Objects);
+
+    if(Programm_Settings.OPEN_FULLSCREEN)
+        QTimer::singleShot(0, this, SLOT(changeFullScreenMode()));
+
+
+    BCamX = 0;
+    BCamY = 0;
+    delta = 0;
+    changeFollowSetting(false);
+    resize(maximumSize());
+    setConstFields();
+    //----------------------
 
     srand(time(0));
     setWindowIcon(QIcon(QPixmap(":/img/Mainico.png")));
@@ -80,6 +114,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->generate_action->setShortcut(QKeySequence("CTRL+G"));
 
     ui->fullsreen_act->setShortcut(QKeySequence("F11"));
+
+    ui->settings_act->setShortcut(QKeySequence("CTRL+K"));
     //----------------------------------------------
 
 
@@ -92,26 +128,10 @@ MainWindow::MainWindow(QWidget *parent) :
     setPatternMode(false);
     //--------------------
 
-
-    //Установка настроек приложения--------------
-    SET_PAUSE_AFTER_CREATE = true;
-    SET_PAUSE_AFTER_RESTART = true;
-    CAMERA_BUFFER_ENABLE = true;
-    changeFollowSetting(false);
-    FullScreenMode = false;
-    sim_speed = 0.01;
-    BCamX = 0;
-    BCamY = 0;
-    delta = 0;
-    G = 1;
-    k = 1;
-    setConstFields();
-    //----------------------
-
     //Настройка параметров графического вывода
-    ui->viewport->setScrollSpeed(0.05);
-    ui->scale_slider->setMaximum(ui->viewport->getScrollSpeed()*10000);
-    ui->scale_slider->setMinimum(ui->viewport->getScrollSpeed()*100);
+    ui->viewport->setScrollSpeed(Programm_Settings.SCALE_SPEED);
+    ui->scale_slider->setMaximum(1000);
+    ui->scale_slider->setMinimum(10);
     changeScaleSlot(100);
     //--------------------------
 
@@ -183,6 +203,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //Дополнительные----------------
     connect(ui->generate_action, SIGNAL(triggered()), this, SLOT(OpenGenerateWidget()));
     connect(ui->fullsreen_act, SIGNAL(triggered()), this, SLOT(changeFullScreenMode()));
+    connect(ui->settings_act, SIGNAL(triggered()), this, SLOT(OpenSettings()));
     //------------------------------
 }
 
@@ -198,6 +219,7 @@ void MainWindow::ForceCalc()
     long double ax, ay;
     long double distance;
     bool hideAdditionalInfo = true;
+    bool not_elastic_check;
 
     auto begin = std::chrono::steady_clock::now();
 
@@ -205,6 +227,7 @@ void MainWindow::ForceCalc()
     {
         ax = 0;
         ay = 0;
+        not_elastic_check = true;
 
         if(!Objects[i].getStatic()) //Проверка на статичность
         {
@@ -214,7 +237,10 @@ void MainWindow::ForceCalc()
         {
             distance = getDistance(i, j);
 
-            if(i != j && distance != 0)
+            if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
+                not_elastic_check = distance > (Objects[i].getRadius()*10 + Objects[j].getRadius()*10);
+
+            if(i != j && distance != 0 && not_elastic_check)
             {
                 F = G * Objects[i].getMass() * Objects[j].getMass()
                         / std::pow(distance, 2);
@@ -225,52 +251,64 @@ void MainWindow::ForceCalc()
 
                 angle = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
 
-
-                QString str = QString::number((double)angle);
+                if(Current_Collision_Mode == CollisionMode::ELASTIC)
+                {
+                if(distance <= (Objects[i].getRadius()*10 + Objects[j].getRadius()*10))
+                {
+                    F += -(1/distance - 1/(Objects[i].getRadius()*10 + Objects[j].getRadius()*10));
+                }
+                }
 
                 ax += F*std::cos(angle) / abs(Objects[i].getMass());
                 ay += F*std::sin(angle) / abs(Objects[i].getMass());
             }
+
+
         }
         }
 
-        auto end = std::chrono::steady_clock::now();
+        if((Current_Collision_Mode == CollisionMode::NOT_ELASTIC && not_elastic_check) || Current_Collision_Mode == CollisionMode::MERGE || Current_Collision_Mode == CollisionMode::ELASTIC)
+        {
+            bool needles = true;
 
-        auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+            if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
+            {
+                long double new_x, new_y;
 
-        delta += elapsed_ms.count();
+                new_x = Objects[i].getXSpeed() + ax + Objects[i].getXPosition();
+                new_y = Objects[i].getYSpeed() + ay + Objects[i].getYPosition();
 
-        long double del = ceil(log10(delta)) - 1;
-        del = pow(10, del);
+                for(int j = 0; j < Objects.size(); j++)
+                {
+                    if(getDistance(new_x, new_y, Objects[j]) <= Objects[i].getRadius()*10 + Objects[j].getRadius()*10 && j != i)
+                        needles = false;
+                }
+            }
 
-        del = ceil((long double)delta / del)*del - delta;
+            if(needles)
+            {
+             Objects[i].setXSpeed(Objects[i].getXSpeed() + ax);
+             Objects[i].setYSpeed(Objects[i].getYSpeed() + ay);
 
-        //std::this_thread::sleep_for(std::chrono::microseconds((int)del));
+             Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed());
+             Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed());
+            }
+        }
 
-        Objects[i].setXSpeed(Objects[i].getXSpeed() + ax);
-        Objects[i].setYSpeed(Objects[i].getYSpeed() + ay);
-
-        Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed());
-        Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed());
-
-        delta = 0;
-
-        begin = std::chrono::steady_clock::now();
 
         if(follow_to_focus_object && Objects[i].getFocus())
             followToObject(Objects[i]);
         }
 
 
-
         for(int j = 0; j < Objects.size(); j++)
-        {
+        {   
             if(j != i)
             {
                 if (i == Objects.size() || j == Objects.size())
                         break;
 
-                if(getDistance(i, j) < Objects[i].getRadius()*10 + Objects[j].getRadius()*10)
+                if(getDistance(i, j) <= Objects[i].getRadius()*10 + Objects[j].getRadius()*10)
                 {
                     long double Vx, Vy;
                     long double xc, yc;
@@ -281,6 +319,14 @@ void MainWindow::ForceCalc()
                     xc = (Objects[i].getMass() * Objects[i].getXPosition() + Objects[j].getMass() * Objects[j].getXPosition()) / (Objects[i].getMass() + Objects[j].getMass());
                     yc = (Objects[i].getMass() * Objects[i].getYPosition() + Objects[j].getMass() * Objects[j].getYPosition()) / (Objects[i].getMass() + Objects[j].getMass());
 
+                    if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
+                    {
+                        Objects[j].setSpeed(Vx, Vy);
+                        Objects[i].setSpeed(Vx, Vy);
+                    }
+
+                    if(Current_Collision_Mode != CollisionMode::ELASTIC && Current_Collision_Mode != CollisionMode::NOT_ELASTIC)
+                    {
                     if(Objects[i].getMass() >= Objects[j].getMass())
                     {
                         if(Objects[i].getMass() == Objects[j].getMass() && Objects[i].getQ() == -Objects[j].getQ() && Objects[i].getQ() != 0)
@@ -310,6 +356,7 @@ void MainWindow::ForceCalc()
                             hideAdditionalInfo = false;
 
                         deleteObject(i);
+                    }
                     }
                 }
             }
@@ -345,7 +392,7 @@ void MainWindow::setPause()
 void MainWindow::Restart()
 {
     Objects = Buffer_Objects;
-    if(CAMERA_BUFFER_ENABLE)
+    if(Programm_Settings.CAMERA_BUFFER_ENABLE)
     {
         ui->viewport->setCamX(BCamX);
         ui->viewport->setCamY(BCamY);
@@ -359,7 +406,7 @@ void MainWindow::Restart()
 
     ui->statusBar->showMessage("Симуляция перезапущена с последней точки возврата");
 
-    if(SET_PAUSE_AFTER_RESTART)
+    if(Programm_Settings.SET_PAUSE_AFTER_RESTART)
         setPause(true);
 }
 
@@ -437,7 +484,7 @@ void MainWindow::addObject()
 
     ui->statusBar->showMessage("Создан новый объект по шаблону: " + Patterns[current_pattern].getName());
 
-    if(SET_PAUSE_AFTER_CREATE)
+    if(Programm_Settings.SET_PAUSE_AFTER_CREATE)
         setPause(true);
 }
 
@@ -473,6 +520,10 @@ void MainWindow::deleteObject(int index)
         }
 
         updateViewport();
+
+        if(Programm_Settings.SET_PAUSE_AFTER_DELETE) //Такая конструкция нужна, чтобы не засорять statusBar
+            setPause(true);
+
     }
 
     updateList();
@@ -677,7 +728,12 @@ void MainWindow::updateViewport()
 
 long double MainWindow::getDistance(int obj1, int obj2)
 {
-    return sqrt(pow(Objects[obj1].getXPosition() - Objects[obj2].getXPosition(), 2) + pow(Objects[obj1].getYPosition() - Objects[obj2].getYPosition(), 2));
+    return std::sqrt(std::pow(Objects[obj1].getXPosition() - Objects[obj2].getXPosition(), 2) + std::pow(Objects[obj1].getYPosition() - Objects[obj2].getYPosition(), 2));
+}
+
+long double MainWindow::getDistance(double px, double py, PhObject &obj)
+{
+    return std::sqrt(std::pow(px - obj.getXPosition(), 2) + std::pow(py - obj.getYPosition(), 2));
 }
 
 void MainWindow::setConstFields() //Устанавливает значение констант в полях
@@ -740,6 +796,20 @@ void MainWindow::clearAllObjectsSlot()
     }
 }
 
+void MainWindow::OpenSettings()
+{
+    SettingsWidget *win = new SettingsWidget(&Programm_Settings, &Simulation_State);
+    win->setWindowIcon(windowIcon());
+
+    win->exec();
+
+    saveSettings();
+
+    ui->viewport->setScrollSpeed(Programm_Settings.SCALE_SPEED);
+
+    updateViewport();
+}
+
 void MainWindow::followToObject(PhObject &obj)
 {
     ui->viewport->setCamX(obj.getXPosition());
@@ -756,11 +826,220 @@ void MainWindow::clearObjectsVector()
     updateViewport();
 }
 
+void MainWindow::loadSettings()
+{
+    QFile settings_file(settings_way);
+    QTextStream reader(&settings_file);
+    QString buffer;
+    int pos = 0;
+
+    //\\-?\\d{1,}\\.?\\d{1,}
+
+    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}");
+    float_reg.setPatternSyntax(QRegExp::RegExp);
+
+    QRegExp int_reg("\\d{1,}");
+    int_reg.setPatternSyntax(QRegExp::RegExp);
+
+    bool isCorrect = true;
+
+    int cm, bac_color;
+
+    if(settings_file.exists())
+    {
+        if(settings_file.open(QIODevice::Text | QIODevice::ReadOnly))
+        {
+        reader.setRealNumberPrecision(20);
+
+        QString line;
+
+        reader >> buffer;
+        Programm_Settings.SET_PAUSE_AFTER_CREATE = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.SET_PAUSE_AFTER_DELETE = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.SET_PAUSE_AFTER_RESTART = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.CAMERA_BUFFER_ENABLE = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        cm = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.G = buffer.toDouble();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.K = buffer.toDouble();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.SCALE_SPEED = buffer.toDouble();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        bac_color = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.RENDER_MODE = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.SIMULATION_SPEED = buffer.toDouble();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        reader >> buffer;
+        Programm_Settings.OPEN_FULLSCREEN = buffer.toInt();
+        isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        switch (cm)
+        {
+        case 0:
+            Programm_Settings.COLLISION_MODE = CollisionMode::MERGE;
+            break;
+        case 1:
+            Programm_Settings.COLLISION_MODE = CollisionMode::ELASTIC;
+            break;
+        case 2:
+            Programm_Settings.COLLISION_MODE = CollisionMode::NOT_ELASTIC;
+            break;
+
+        default:
+            Programm_Settings.COLLISION_MODE = CollisionMode::MERGE;
+            break;
+        }
+
+        switch (bac_color)
+        {
+        case 0:
+            Programm_Settings.BACKGROUND_COLOR = Qt::white;
+            break;
+        case 1:
+            Programm_Settings.BACKGROUND_COLOR = Qt::blue;
+            break;
+        case 2:
+            Programm_Settings.BACKGROUND_COLOR = Qt::darkGray;
+            break;
+        case 3:
+            Programm_Settings.BACKGROUND_COLOR = Qt::darkRed;
+            break;
+        case 4:
+            Programm_Settings.BACKGROUND_COLOR = Qt::darkGreen;
+            break;
+        case 5:
+            Programm_Settings.BACKGROUND_COLOR = Qt::darkBlue;
+            break;
+        case 6:
+            Programm_Settings.BACKGROUND_COLOR = Qt::darkYellow;
+            break;
+
+        default:
+            Programm_Settings.BACKGROUND_COLOR = Qt::white;
+            break;
+        }
+
+        settings_file.close();
+
+        if(!isCorrect)
+        {
+            QMessageBox msgb;
+            msgb.setWindowTitle("Предупреждение");
+            msgb.setText("Файл настроек был повреждён");
+            msgb.setInformativeText("Настройки будут установлены по умолчанию");
+            msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Information));
+            msgb.setWindowIcon(windowIcon());
+
+            msgb.exec();
+
+            Programm_Settings.SetDefaultSettings();
+            saveSettings();
+        }
+
+        }
+
+        else
+        {
+            QMessageBox::warning(this, "Ошибка", "Не доступа к файлу настроек, программа может работать некорректно (Настройки будут установлены по умолчанию)");
+            Programm_Settings.SetDefaultSettings();
+        }
+    }
+
+    else
+    {
+        Programm_Settings.SetDefaultSettings();
+        saveSettings();
+    }
+}
+
+void MainWindow::saveSettings()
+{
+    QFile settings_file(settings_way);
+
+    QTextStream writer(&settings_file);
+
+    QDir dir(QCoreApplication::applicationDirPath());
+
+    if(!dir.exists("Settings"))
+        dir.mkdir("Settings");
+
+    if(settings_file.open(QIODevice::Text | QIODevice::WriteOnly))
+    {
+       writer.setRealNumberPrecision(20);
+
+       writer << (int)Programm_Settings.SET_PAUSE_AFTER_CREATE << endl;
+       writer << (int)Programm_Settings.SET_PAUSE_AFTER_DELETE << endl;
+       writer << (int)Programm_Settings.SET_PAUSE_AFTER_RESTART << endl;
+       writer << (int)Programm_Settings.CAMERA_BUFFER_ENABLE << endl;
+
+       if(Programm_Settings.COLLISION_MODE == CollisionMode::MERGE)
+           writer << 0 << endl;
+       if(Programm_Settings.COLLISION_MODE == CollisionMode::ELASTIC)
+           writer << 1 << endl;
+       if(Programm_Settings.COLLISION_MODE == CollisionMode::NOT_ELASTIC)
+           writer << 2 << endl;
+
+       writer << Programm_Settings.G << endl;
+       writer << Programm_Settings.K << endl;
+       writer << Programm_Settings.SCALE_SPEED << endl;
+
+       {
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::white)
+               writer << 0 << endl;
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::cyan)
+               writer << 1 << endl;
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::darkGray)
+               writer << 2 << endl;
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::darkRed)
+               writer << 3 << endl;
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::darkGreen)
+               writer << 4 << endl;
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::darkBlue)
+               writer << 5 << endl;
+           if(Programm_Settings.BACKGROUND_COLOR == Qt::darkYellow)
+               writer << 6 << endl;
+       }
+
+       writer << (int)Programm_Settings.RENDER_MODE << endl;
+       writer << Programm_Settings.SIMULATION_SPEED << endl;
+       writer << (int)Programm_Settings.OPEN_FULLSCREEN << endl;
+
+       settings_file.close();
+    }
+}
+
 int getRandom(int p1, int p2)
 {
     return p1 + rand() % (p2 - p1 + 1);
 }
-
 
 void MainWindow::randomGenerate(GeneratePattern &pattern, int count)
 {
@@ -771,19 +1050,29 @@ void MainWindow::randomGenerate(GeneratePattern &pattern, int count)
     for(int i = 0; i < count; i++)
     {
         obj.setName(pattern.name + " " + QString::number(i));
-        obj.setMass(getRandom(pattern.m1, pattern.m2));
-        obj.setQ(getRandom(pattern.q1, pattern.q2));
+        obj.setMass((double)getRandom(pattern.m1*100000, pattern.m2*100000)/100000);
+        obj.setQ((double)getRandom(pattern.q1*100000, pattern.q2*100000)/100000);
 
         if(pattern.rad_auto)
+        {
             obj.setRadius(obj.getMass() * pattern.p);
+            if(obj.getRadius() < 0.1)
+                obj.setRadius(0.1);
+        }
+
         else
-            obj.setRadius(getRandom(pattern.rad1, pattern.rad2));
+            obj.setRadius((double)getRandom(pattern.rad1*10, pattern.rad2*10) / 10);
+
 
         obj.setXPosition(getRandom(-side_size/2, side_size/2) + pattern.x0);
         obj.setYPosition(getRandom(-side_size/2, side_size/2) + pattern.y0);
         angle = std::atan2(obj.getYPosition() - pattern.y0, obj.getXPosition() - pattern.x0);
-        obj.setXSpeed(std::cos(angle) * pattern.start_speed + getRandom(-pattern.max_speed*10, pattern.max_speed*10)/10);
-        obj.setYSpeed(std::sin(angle) * pattern.start_speed + getRandom(-pattern.max_speed*10, pattern.max_speed*10)/10);
+        obj.setXSpeed(std::cos(angle) * pattern.start_speed + getRandom(-pattern.max_speed*1000,
+            pattern.max_speed*1000)/1000 + std::cos(1.570796326 + angle) * pattern.tangentum_speed * getDistance(pattern.x0, pattern.y0, obj) / side_size);
+
+        obj.setYSpeed(std::sin(angle) * pattern.start_speed + getRandom(-pattern.max_speed*1000,
+            pattern.max_speed*1000)/1000 + std::sin(1.570796326 + angle) * pattern.tangentum_speed * getDistance(pattern.x0, pattern.y0, obj) / side_size);
+
         obj.setColor(pattern.colors[getRandom(0, pattern.colors.size() - 1)]);
 
         Objects.push_back(obj);
@@ -954,7 +1243,7 @@ void MainWindow::changeScaleSlot(int value)
 {
     ui->scale_slider->setValue(value);
     ui->scale_label->setText(QString::number(value) + "%");
-    ui->viewport->setScale((long double)value / 100);
+    ui->viewport->setScale((double)value / 100);
 }
 
 void MainWindow::changeCamLabel(int x, int y)
@@ -1104,3 +1393,5 @@ void MainWindow::OpenGenerateWidget()
     if(suc)
         randomGenerate(pat, count);
 }
+
+

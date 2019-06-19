@@ -11,6 +11,7 @@ void Viewport::paintEvent(QPaintEvent *)
     p.scale(1/distance_scale, 1/distance_scale);
     //p.rotate(alpha);
 
+
     for(auto &var : ToPaintVector)
     {
         if(var.getFocus())
@@ -26,8 +27,8 @@ void Viewport::paintEvent(QPaintEvent *)
 void Viewport::wheelEvent(QWheelEvent *e)
 {
     distance_scale -= SCROLL_SPEED * e->delta()/abs(e->delta());
-    if(distance_scale <= SCROLL_SPEED)
-        distance_scale = SCROLL_SPEED;
+    if(distance_scale < MIN_DISTANCE_SCALE)
+        distance_scale = MIN_DISTANCE_SCALE;
     if(distance_scale > MAX_DISTANCE_SCALE)
         distance_scale = MAX_DISTANCE_SCALE;
 
@@ -68,11 +69,10 @@ Viewport::Viewport(QWidget *parent) : QFrame(parent)
     camX = camY = 0;
     SCROLL_SPEED = 0.1;
     distance_scale = 1;
-    MAX_DISTANCE_SCALE = SCROLL_SPEED * 100;
-    MIN_DISTANCE_SCALE = SCROLL_SPEED;
+    MAX_DISTANCE_SCALE = 10;
+    MIN_DISTANCE_SCALE = 0.1;
 
     alpha = 0;
-    CAM_SCROLL_SPEED = 100;
 }
 
 int Viewport::getCamX()
@@ -107,9 +107,6 @@ void Viewport::setCamPos(int xp /*= 0*/, int yp/*= 0*/)
 void Viewport::setScrollSpeed(double val)
 {
     SCROLL_SPEED = val;
-    MAX_DISTANCE_SCALE = SCROLL_SPEED * 100;
-    MIN_DISTANCE_SCALE = SCROLL_SPEED;
-    distance_scale = 1;
 }
 
 void Viewport::setScale(double val)
@@ -131,6 +128,21 @@ double Viewport::getScale()
 void Viewport::setAlpha(int alpha)
 {
     this->alpha = alpha;
+}
+
+void Viewport::setBackgroundColor(QColor color)
+{
+    background_color = color;
+}
+
+double *Viewport::getPointerCamX()
+{
+    return &camX;
+}
+
+double *Viewport::getPointerCamY()
+{
+    return &camY;
 }
 
 void Viewport::setPaintVector(QVector<PhObject>& vec)

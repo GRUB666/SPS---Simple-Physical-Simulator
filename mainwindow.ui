@@ -1580,6 +1580,8 @@
     <addaction name="action_2"/>
     <addaction name="action_3"/>
     <addaction name="action_4"/>
+    <addaction name="separator"/>
+    <addaction name="action_8"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
@@ -1656,6 +1658,11 @@
   <action name="action_6">
    <property name="text">
     <string>О разработчике</string>
+   </property>
+  </action>
+  <action name="action_8">
+   <property name="text">
+    <string>Выйти</string>
    </property>
   </action>
  </widget>
