@@ -29,30 +29,21 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
     //Установка настроек приложения--------------
     settings_way = QCoreApplication::applicationDirPath() + "/Settings/Settings.st";
 
     loadSettings();
 
-    Current_Collision_Mode = Programm_Settings.COLLISION_MODE;
-    ui->viewport->setBackgroundColor(Programm_Settings.BACKGROUND_COLOR);
-    this->G = Programm_Settings.G;
-    this->k = Programm_Settings.K;
-    this->FullScreenMode = Programm_Settings.OPEN_FULLSCREEN;
+    newModel();
 
     Simulation_State = SimulationState(&G, &k, &Current_Collision_Mode,
                              ui->viewport->getBackgroundcolorPointer(),
                              ui->viewport->getPointerCamX(), ui->viewport->getPointerCamY(), &Objects);
 
+    this->FullScreenMode = !Programm_Settings.OPEN_FULLSCREEN;
     if(Programm_Settings.OPEN_FULLSCREEN)
         QTimer::singleShot(0, this, SLOT(changeFullScreenMode()));
 
-
-    BCamX = 0;
-    BCamY = 0;
-    delta = 0;
-    changeFollowSetting(false);
     resize(maximumSize());
     setConstFields();
     //----------------------
@@ -116,6 +107,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->fullsreen_act->setShortcut(QKeySequence("F11"));
 
     ui->settings_act->setShortcut(QKeySequence("CTRL+K"));
+
+    ui->create_new_model->setShortcut(QKeySequence("CTRL+N"));
+
+    ui->open_model->setShortcut(QKeySequence("CTRL+O"));
+
+    ui->save_current_model->setShortcut(QKeySequence("CTRL+S"));
     //----------------------------------------------
 
 
@@ -138,6 +135,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //Таймер приложения, установка фокуса на -1
     timer = new QTimer(this);
     timer->setInterval(0);
+    timer->start();
     setPause(true);
     setFocus(-1);
     //-----------------------
@@ -223,6 +221,9 @@ void MainWindow::ForceCalc()
 
     auto begin = std::chrono::steady_clock::now();
 
+    if(!isPause)
+    {
+
     for(int i = 0; i < Objects.size(); i++)
     {
         ax = 0;
@@ -300,7 +301,6 @@ void MainWindow::ForceCalc()
             followToObject(Objects[i]);
         }
 
-
         for(int j = 0; j < Objects.size(); j++)
         {   
             if(j != i)
@@ -371,6 +371,8 @@ void MainWindow::ForceCalc()
     if(current_index >= 0 && current_index < Objects.size())
     printToPanel(Objects[current_index], hideAdditionalInfo);
 
+    }
+
     updateViewport();
 }
 
@@ -418,7 +420,7 @@ void MainWindow::setPause(bool val)
     {
         ui->viewport->setStyleSheet("#viewport { border: 5px solid red; }");
         ui->pause_button->setIcon(QIcon(QPixmap("://img/start.png")));
-        timer->stop();
+        //timer->stop();
         ui->pause_button->setToolTip("Запуск симуляции CTRL+TAB");
     }
 
@@ -426,7 +428,7 @@ void MainWindow::setPause(bool val)
     {
         ui->viewport->setStyleSheet("#viewport { border: 0px solid black; }");
         ui->pause_button->setIcon(QIcon(QPixmap("://img/stop.png")));
-        timer->start(0);
+        //timer->start(0);
         ui->pause_button->setToolTip("Остановить симуляцию CTRL+TAB");
     }
 }
@@ -808,6 +810,40 @@ void MainWindow::OpenSettings()
     ui->viewport->setScrollSpeed(Programm_Settings.SCALE_SPEED);
 
     updateViewport();
+}
+
+//Слот, который создаёт новую модель
+void MainWindow::createNewModel()
+{
+
+}
+
+//Создание новой модели
+void MainWindow::newModel()
+{
+    Objects.clear();
+
+    Save_Buffer_Objects = Objects;
+
+    Current_Collision_Mode = Programm_Settings.COLLISION_MODE;
+    ui->viewport->setBackgroundColor(Programm_Settings.BACKGROUND_COLOR);
+    this->G = Programm_Settings.G;
+    this->k = Programm_Settings.K;
+
+    BCamX = 0;
+    BCamY = 0;
+    delta = 0;
+    changeFollowSetting(false);
+    setPause(true);
+    updateList();
+    setFocus();
+    updateViewport();
+}
+
+//Проверяет наличие изменений в текущей симуляции
+bool MainWindow::hasModifided()
+{
+
 }
 
 void MainWindow::followToObject(PhObject &obj)

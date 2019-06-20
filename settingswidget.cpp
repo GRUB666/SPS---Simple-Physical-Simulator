@@ -1,6 +1,42 @@
 #include "settingswidget.h"
 #include "ui_settingswidget.h"
 
+void SettingsWidget::closeEvent(QCloseEvent *e)
+{
+    if(sucsess)
+    {
+        *ptr_settings = tmp_settings;
+    }
+
+    else
+    {
+        int res = QMessageBox::Ok;
+
+        if(hasModifided())
+        {
+            QMessageBox msgb;
+            msgb.setWindowTitle("Закрытие окна");
+            msgb.setText("Настройки были изменены, но не были сохранены");
+            msgb.setInformativeText("Всё равно закрыть окно?");
+            msgb.setStandardButtons(QMessageBox::Ok | QMessageBox::No);
+            msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
+            msgb.setWindowIcon(windowIcon());
+            res = msgb.exec();
+        }
+
+        if(res == QMessageBox::Ok)
+        {
+        *(ptr_sim_state->getBackcolorPointer()) = background_color;
+        *(ptr_sim_state->getCollisionModePointer()) = collision_mode;
+        }
+
+        else
+        {
+            e->ignore();
+        }
+    }
+}
+
 SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsWidget)
@@ -10,6 +46,8 @@ SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, QWidget *par
     ptr_settings = set;
     ptr_sim_state = sim;
 
+    this->sucsess = false;
+
     tmp_settings = *ptr_settings;
 
     background_color = *(sim->getBackcolorPointer());
@@ -17,6 +55,8 @@ SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, QWidget *par
 
     ui->coll_mode1->setAutoExclusive(false);
     ui->coll_mode2->setAutoExclusive(false);
+
+    ui->accept_button->setEnabled(false);
 
     ui->drop_settings->setToolTip("Установит настройки по умолчанию [Не отразится на текущей модели]");
 
@@ -39,49 +79,49 @@ SettingsWidget::~SettingsWidget()
 void SettingsWidget::fillFileds()
 {
     ui->pause_after_create->blockSignals(true);
-    ui->pause_after_create->setChecked(ptr_settings->SET_PAUSE_AFTER_CREATE);
+    ui->pause_after_create->setChecked(tmp_settings.SET_PAUSE_AFTER_CREATE);
     ui->pause_after_create->blockSignals(false);
 
     ui->pause_after_create->blockSignals(true);
-    ui->pause_after_delete->setChecked(ptr_settings->SET_PAUSE_AFTER_DELETE);
+    ui->pause_after_delete->setChecked(tmp_settings.SET_PAUSE_AFTER_DELETE);
     ui->pause_after_create->blockSignals(false);
 
     ui->pause_after_create->blockSignals(true);
-    ui->pause_after_restart->setChecked(ptr_settings->SET_PAUSE_AFTER_RESTART);
+    ui->pause_after_restart->setChecked(tmp_settings.SET_PAUSE_AFTER_RESTART);
     ui->pause_after_create->blockSignals(false);
 
     ui->pause_after_create->blockSignals(true);
-    ui->back_camera->setChecked(ptr_settings->CAMERA_BUFFER_ENABLE);
+    ui->back_camera->setChecked(tmp_settings.CAMERA_BUFFER_ENABLE);
     ui->pause_after_create->blockSignals(false);
 
     fillCollisionModeFields();
     fillBackcolorBox();
 
-    ui->g_line->setText(QString::number(ptr_settings->G));
-    ui->q_line->setText(QString::number(ptr_settings->K));
+    ui->g_line->setText(QString::number(tmp_settings.G));
+    ui->q_line->setText(QString::number(tmp_settings.K));
 
     ui->horizontalSlider->blockSignals(true);
     ui->spinBox->blockSignals(true);
-    ui->horizontalSlider->setValue(ptr_settings->SCALE_SPEED*100);
-    ui->spinBox->setValue(ptr_settings->SCALE_SPEED*100);
+    ui->horizontalSlider->setValue(tmp_settings.SCALE_SPEED*100);
+    ui->spinBox->setValue(tmp_settings.SCALE_SPEED*100);
     ui->horizontalSlider->blockSignals(false);
     ui->spinBox->blockSignals(false);
 
     if(ui->delta2->isChecked())
     {
         ui->sim_speed->blockSignals(true);
-        ui->sim_speed->setText(QString::number(ptr_settings->SIMULATION_SPEED));
+        ui->sim_speed->setText(QString::number(tmp_settings.SIMULATION_SPEED));
         ui->sim_speed->blockSignals(false);
     }
 
-    ui->delta1->setChecked(!ptr_settings->RENDER_MODE);
-    ui->delta2->setChecked(ptr_settings->RENDER_MODE);
+    ui->delta1->setChecked(!tmp_settings.RENDER_MODE);
+    ui->delta2->setChecked(tmp_settings.RENDER_MODE);
 
-    ui->sim_speed->setEnabled(ptr_settings->RENDER_MODE);
-    ui->sim_speed->setText(QString::number(ptr_settings->SIMULATION_SPEED));
+    ui->sim_speed->setEnabled(tmp_settings.RENDER_MODE);
+    ui->sim_speed->setText(QString::number(tmp_settings.SIMULATION_SPEED));
 
     ui->fullscreen_box->blockSignals(true);
-    ui->fullscreen_box->setChecked(ptr_settings->OPEN_FULLSCREEN);
+    ui->fullscreen_box->setChecked(tmp_settings.OPEN_FULLSCREEN);
     ui->fullscreen_box->blockSignals(false);
 }
 
@@ -90,7 +130,7 @@ void SettingsWidget::fillCollisionModeFields()
     CollisionMode colllmode;
 
     if(ui->coll_mode1->isChecked())
-        colllmode = collision_mode;
+        colllmode = *(ptr_sim_state->getCollisionModePointer());
     else
         colllmode = tmp_settings.COLLISION_MODE;
 
@@ -129,7 +169,7 @@ void SettingsWidget::fillBackcolorBox()
     QColor backcolor;
 
     if(ui->color_mode1->isChecked())
-        backcolor = background_color;
+        backcolor = *(ptr_sim_state->getBackcolorPointer());
     else
         backcolor = tmp_settings.BACKGROUND_COLOR;
 
@@ -189,29 +229,29 @@ void SettingsWidget::setBackgroundColor(int code)
     switch (code)
     {
     case 0:
-        background_color = Qt::white;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::white;
         break;
     case 1:
-        background_color = Qt::cyan;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::cyan;
         break;
     case 2:
-        background_color = Qt::darkGray;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::darkGray;
         break;
     case 3:
-        background_color = Qt::darkRed;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::darkRed;
         break;
     case 4:
-        background_color = Qt::darkGreen;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::darkGreen;
         break;
     case 5:
-        background_color = Qt::darkBlue;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::darkBlue;
         break;
     case 6:
-        background_color = Qt::darkYellow;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::darkYellow;
         break;
 
     default:
-        background_color = Qt::white;
+        *(ptr_sim_state->getBackcolorPointer()) = Qt::white;
         break;
     }
 }
@@ -221,21 +261,25 @@ void SettingsWidget::setCollisionMode(int mode)
     switch (mode)
     {
     case 0:
-        collision_mode = CollisionMode::MERGE;
+        *(ptr_sim_state->getCollisionModePointer()) = CollisionMode::MERGE;
         break;
     case 1:
-        collision_mode = CollisionMode::ELASTIC;
+        *(ptr_sim_state->getCollisionModePointer()) = CollisionMode::ELASTIC;
         break;
     case 2:
-        collision_mode = CollisionMode::NOT_ELASTIC;
+        *(ptr_sim_state->getCollisionModePointer()) = CollisionMode::NOT_ELASTIC;
         break;
 
     default:
-        collision_mode = CollisionMode::MERGE;
+        *(ptr_sim_state->getCollisionModePointer()) = CollisionMode::MERGE;
         break;
     }
 }
 
+bool SettingsWidget::hasModifided()
+{
+    return *ptr_settings != tmp_settings || background_color != *(ptr_sim_state->getBackcolorPointer()) || *(ptr_sim_state->getCollisionModePointer()) != collision_mode;
+}
 
 void SettingsWidget::on_color_mode1_clicked()
 {
@@ -251,41 +295,57 @@ void SettingsWidget::on_coll_mode1_clicked()
 void SettingsWidget::on_pause_after_create_clicked(bool checked)
 {
     tmp_settings.SET_PAUSE_AFTER_CREATE = checked;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_pause_after_delete_clicked(bool checked)
 {
     tmp_settings.SET_PAUSE_AFTER_DELETE = checked;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_pause_after_restart_clicked(bool checked)
 {
     tmp_settings.SET_PAUSE_AFTER_RESTART = checked;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_back_camera_clicked(bool checked)
 {
     tmp_settings.CAMERA_BUFFER_ENABLE = checked;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_g_line_textEdited(const QString &arg1)
 {
     tmp_settings.G = arg1.toDouble();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_q_line_textEdited(const QString &arg1)
 {
     tmp_settings.K = arg1.toDouble();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_horizontalSlider_valueChanged(int value)
 {
     tmp_settings.SCALE_SPEED = (double)value / 100;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_spinBox_valueChanged(int arg1)
 {
     tmp_settings.SCALE_SPEED = (double)arg1 / 100;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_color_mode2_clicked()
@@ -304,47 +364,67 @@ void SettingsWidget::on_color_box_currentIndexChanged(int index)
     {
         tmp_settings.setBackgroundColor(index);
     }
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_coll_mode2_clicked()
 {
-    ui->coll_mode2->setChecked(false);
+    ui->coll_mode1->setChecked(false);
     fillCollisionModeFields();
 }
 
 void SettingsWidget::on_merge_box_clicked()
 {
     updateCollisionMode();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_elastic_box_clicked()
 {
     updateCollisionMode();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_not_elastic_box_clicked()
 {
     updateCollisionMode();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_delta1_clicked(bool checked)
 {
     tmp_settings.RENDER_MODE = !checked;
+    ui->free_lab_9->setEnabled(!checked);
+    ui->sim_speed->setEnabled(!checked);
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_delta2_clicked(bool checked)
 {
     tmp_settings.RENDER_MODE = checked;
+    ui->free_lab_9->setEnabled(checked);
+    ui->sim_speed->setEnabled(checked);
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_sim_speed_textEdited(const QString &arg1)
 {
     tmp_settings.SIMULATION_SPEED = arg1.toDouble();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_fullscreen_box_clicked(bool checked)
 {
     tmp_settings.OPEN_FULLSCREEN = checked;
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_drop_settings_clicked()
@@ -360,13 +440,14 @@ void SettingsWidget::on_cancel_button_clicked()
 }
 
 void SettingsWidget::on_accept_button_clicked()
-{
-    *ptr_settings = tmp_settings;
-
-    *(ptr_sim_state->getBackcolorPointer()) = background_color;
-    *(ptr_sim_state->getCollisionModePointer()) = collision_mode;
+{   
+    sucsess = true;
 
     close();
 }
 
+void SettingsWidget::on_SettingsWidget_destroyed()
+{
+
+}
 

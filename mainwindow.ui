@@ -1576,12 +1576,12 @@
     <property name="title">
      <string>Файл</string>
     </property>
-    <addaction name="action"/>
-    <addaction name="action_2"/>
-    <addaction name="action_3"/>
-    <addaction name="action_4"/>
+    <addaction name="create_new_model"/>
+    <addaction name="open_model"/>
+    <addaction name="save_current_model"/>
+    <addaction name="save_current_model_as"/>
     <addaction name="separator"/>
-    <addaction name="action_8"/>
+    <addaction name="quit"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
@@ -1615,22 +1615,22 @@
    <addaction name="menu_5"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="action">
+  <action name="create_new_model">
    <property name="text">
     <string>Создать новую модель</string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="open_model">
    <property name="text">
     <string>Открыть модель</string>
    </property>
   </action>
-  <action name="action_3">
+  <action name="save_current_model">
    <property name="text">
     <string>Сохранить текущую модель</string>
    </property>
   </action>
-  <action name="action_4">
+  <action name="save_current_model_as">
    <property name="text">
     <string>Сохранить текущую модель как...</string>
    </property>
@@ -1660,7 +1660,7 @@
     <string>О разработчике</string>
    </property>
   </action>
-  <action name="action_8">
+  <action name="quit">
    <property name="text">
     <string>Выйти</string>
    </property>

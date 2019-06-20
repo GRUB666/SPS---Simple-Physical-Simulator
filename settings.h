@@ -32,6 +32,9 @@ public:
     void setBackgroundColor(int code);
     void setCollisionMode(int mode);
 
+    bool operator == (Settings& obj);
+    bool operator != (Settings& obj);
+
 };
 
 #endif // SETTINGS_H

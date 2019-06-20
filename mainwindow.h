@@ -37,11 +37,11 @@ class MainWindow : public QMainWindow
 private:
     QVector<PhObject> Objects;
     QVector<PhObject> Buffer_Objects;
+    QVector<PhObject> Save_Buffer_Objects;
     QVector<PhObject> Patterns;
     int current_index;
     int current_pattern;
     bool pattern_mode;
-
 
     QString settings_way;
 
@@ -103,7 +103,8 @@ private:
     void clearObjectsVector();
     void loadSettings();
     void saveSettings();
-
+    void newModel();
+    bool hasModifided();
 
 private:
     Ui::MainWindow *ui;
@@ -141,6 +142,9 @@ private slots:
    void changeFullScreenMode();
    void clearAllObjectsSlot();
    void OpenSettings();
+   void createNewModel();
+   //void saveModel();
+   //void openModel();
 };
 
 #endif // MAINWINDOW_H

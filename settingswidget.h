@@ -6,6 +6,8 @@
 #include "settings.h"
 #include "simulationstate.h"
 #include <QDebug>
+#include <QMessageBox>
+#include <QCloseEvent>
 
 namespace Ui {
 class SettingsWidget;
@@ -15,9 +17,15 @@ class SettingsWidget : public QDialog
 {
     Q_OBJECT
 
+protected:
+    virtual void closeEvent(QCloseEvent *event);
+
+
 private:
     Settings *ptr_settings;
     SimulationState *ptr_sim_state;
+
+    bool sucsess;
 
     Settings tmp_settings;
 
@@ -33,6 +41,7 @@ public:
     void updateCollisionMode();
     void setBackgroundColor(int code);
     void setCollisionMode(int mode);
+    bool hasModifided();
 
 private slots:
     void on_color_mode1_clicked();
@@ -54,7 +63,6 @@ private slots:
     void on_horizontalSlider_valueChanged(int value);
 
     void on_spinBox_valueChanged(int arg1);
-
 
     void on_color_mode2_clicked();
 
@@ -82,7 +90,7 @@ private slots:
 
     void on_accept_button_clicked();
 
-
+    void on_SettingsWidget_destroyed();
 
 private:
     Ui::SettingsWidget *ui;

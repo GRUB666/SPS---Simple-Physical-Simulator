@@ -88,3 +88,39 @@ void Settings::setCollisionMode(int mode)
         break;
     }
 }
+
+bool Settings::operator ==(Settings &obj)
+{
+    bool result = true;
+
+    result &= obj.SET_PAUSE_AFTER_CREATE == this->SET_PAUSE_AFTER_CREATE;
+
+    result &= obj.SET_PAUSE_AFTER_DELETE == this->SET_PAUSE_AFTER_DELETE;
+
+    result &= obj.SET_PAUSE_AFTER_RESTART == this->SET_PAUSE_AFTER_RESTART;
+
+    result &= obj.CAMERA_BUFFER_ENABLE == this->CAMERA_BUFFER_ENABLE;
+
+    result &= obj.COLLISION_MODE == this->COLLISION_MODE;
+
+    result &= obj.G == this->G;
+
+    result &= obj.K == this->K;
+
+    result &= obj.SCALE_SPEED == this->SCALE_SPEED;
+
+    result &= obj.BACKGROUND_COLOR == this->BACKGROUND_COLOR;
+
+    result &= obj.RENDER_MODE == this->RENDER_MODE;
+
+    result &= obj.SIMULATION_SPEED == this->SIMULATION_SPEED;
+
+    result &= obj.OPEN_FULLSCREEN == this->OPEN_FULLSCREEN;
+
+    return result;
+}
+
+bool Settings::operator !=(Settings &obj)
+{
+    return !(*this == obj);
+}
