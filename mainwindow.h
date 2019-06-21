@@ -17,6 +17,7 @@
 #include <random>
 #include <QDir>
 #include <QCoreApplication>
+#include <QFileDialog>
 #include "phobject.h"
 #include "generatewidget.h"
 #include "settingswidget.h"
@@ -105,6 +106,9 @@ private:
     void saveSettings();
     void newModel();
     bool hasModifided();
+    bool vectorEquals(QVector<PhObject> &vec1, QVector<PhObject> &vec2);
+    void save();
+    void open(QString prev_way = "");
 
 private:
     Ui::MainWindow *ui;
@@ -143,8 +147,9 @@ private slots:
    void clearAllObjectsSlot();
    void OpenSettings();
    void createNewModel();
-   //void saveModel();
-   //void openModel();
+   void saveModel();
+   void saveModelAs();
+   void openModel();
 };
 
 #endif // MAINWINDOW_H

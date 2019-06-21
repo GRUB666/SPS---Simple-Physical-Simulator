@@ -40,6 +40,8 @@ MainWindow::MainWindow(QWidget *parent) :
                              ui->viewport->getBackgroundcolorPointer(),
                              ui->viewport->getPointerCamX(), ui->viewport->getPointerCamY(), &Objects);
 
+    Simulation_State.setEmptyWay();
+
     this->FullScreenMode = !Programm_Settings.OPEN_FULLSCREEN;
     if(Programm_Settings.OPEN_FULLSCREEN)
         QTimer::singleShot(0, this, SLOT(changeFullScreenMode()));
@@ -202,6 +204,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->generate_action, SIGNAL(triggered()), this, SLOT(OpenGenerateWidget()));
     connect(ui->fullsreen_act, SIGNAL(triggered()), this, SLOT(changeFullScreenMode()));
     connect(ui->settings_act, SIGNAL(triggered()), this, SLOT(OpenSettings()));
+    connect(ui->create_new_model, SIGNAL(triggered()), this, SLOT(createNewModel()));
+    connect(ui->save_current_model, SIGNAL(triggered()), this, SLOT(saveModel()));
+    connect(ui->save_current_model_as, SIGNAL(triggered()), this, SLOT(saveModelAs()));
+    connect(ui->open_model, SIGNAL(triggered()), this, SLOT(openModel()));
     //------------------------------
 }
 
@@ -800,10 +806,17 @@ void MainWindow::clearAllObjectsSlot()
 
 void MainWindow::OpenSettings()
 {
-    SettingsWidget *win = new SettingsWidget(&Programm_Settings, &Simulation_State);
+    bool succes;
+
+    SettingsWidget *win = new SettingsWidget(&Programm_Settings, &Simulation_State, &succes);
     win->setWindowIcon(windowIcon());
 
     win->exec();
+
+    if(succes)
+        ui->statusBar->showMessage("Настройки были успешно изменены");
+    else
+        ui->statusBar->showMessage("Настройки не были изменены");
 
     saveSettings();
 
@@ -815,7 +828,105 @@ void MainWindow::OpenSettings()
 //Слот, который создаёт новую модель
 void MainWindow::createNewModel()
 {
+    if(hasModifided())
+    {
+        int res;
 
+        QMessageBox msgb;
+        msgb.setWindowTitle("Создание новой модели");
+        msgb.setText("Текущая модель была изменена");
+        msgb.setInformativeText("Хотите сохранить её?");
+        msgb.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
+        msgb.setWindowIcon(windowIcon());
+        res = msgb.exec();
+
+        if(res == QMessageBox::Yes)
+            saveModel();
+
+        newModel();
+    }
+
+    else
+        newModel();
+}
+
+void MainWindow::save()
+{
+    if(Simulation_State.WriteDataInFile())
+    {
+        ui->statusBar->showMessage("Файл успешно сохранён");
+        Save_Buffer_Objects = Objects;
+    }
+
+    else
+        ui->statusBar->showMessage("Файл не сохранён");
+}
+
+void MainWindow::open(QString prev_way /*= ""*/)
+{
+    if(Simulation_State.ReadDataFromFile())
+    {
+        ui->statusBar->showMessage("Файл успешно открыт");
+        Save_Buffer_Objects = Objects;
+    }
+
+    else
+    {
+        QMessageBox msgb;
+        msgb.setWindowTitle("Ошибка");
+        msgb.setText("Некорретный файл модели!");
+        msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Warning));
+        msgb.setWindowIcon(windowIcon());
+
+        ui->statusBar->showMessage("Ошибка открытия файла!");
+        msgb.exec();
+
+        Simulation_State.setFileWay(prev_way);
+    }
+}
+
+void MainWindow::saveModel()
+{
+    if(!QFile::exists(Simulation_State.getFileWay()))
+        saveModelAs();
+    else
+        save();
+}
+
+void MainWindow::saveModelAs()
+{
+    QString way = QFileDialog::getSaveFileName(0, "Сохранить как...", "*.sps");
+    Simulation_State.setFileWay(way);
+    save();
+}
+
+void MainWindow::openModel()
+{
+    if(hasModifided())
+    {
+        int res;
+
+        QMessageBox msgb;
+        msgb.setWindowTitle("Отркытие файла");
+        msgb.setText("Текущая модель была изменена");
+        msgb.setInformativeText("Хотите сохранить её, прежде чем открыть?");
+        msgb.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
+        msgb.setWindowIcon(windowIcon());
+        res = msgb.exec();
+
+        if(res == QMessageBox::Yes)
+            saveModel();
+    }
+
+    QString prev_way = Simulation_State.getFileWay();
+    QString way = QFileDialog::getOpenFileName(0, "Открыть файл", "*.sps");
+    Simulation_State.setFileWay(way);
+    open(prev_way);
+    updateList();
+    updateViewport();
+    setConstFields();
 }
 
 //Создание новой модели
@@ -838,12 +949,34 @@ void MainWindow::newModel()
     updateList();
     setFocus();
     updateViewport();
+
+    ui->statusBar->showMessage("Загружена новая модель");
+
+    Simulation_State.setEmptyWay();
 }
 
 //Проверяет наличие изменений в текущей симуляции
 bool MainWindow::hasModifided()
 {
+    return !vectorEquals(Objects, Save_Buffer_Objects);
+}
 
+bool MainWindow::vectorEquals(QVector<PhObject> &vec1, QVector<PhObject> &vec2)
+{
+    if(vec1.size() != vec2.size())
+        return false;
+
+    bool suc;
+
+    for(int i = 0; i < vec1.size(); i++)
+    {
+        suc = vec1[i] != vec2[i];
+
+        if(suc)
+            return  false;
+    }
+
+    return true;
 }
 
 void MainWindow::followToObject(PhObject &obj)
@@ -871,10 +1004,10 @@ void MainWindow::loadSettings()
 
     //\\-?\\d{1,}\\.?\\d{1,}
 
-    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}");
+    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{1,}");
     float_reg.setPatternSyntax(QRegExp::RegExp);
 
-    QRegExp int_reg("\\d{1,}");
+    QRegExp int_reg("\\-?\\d{1,}");
     int_reg.setPatternSyntax(QRegExp::RegExp);
 
     bool isCorrect = true;

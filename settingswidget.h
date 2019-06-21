@@ -25,7 +25,7 @@ private:
     Settings *ptr_settings;
     SimulationState *ptr_sim_state;
 
-    bool sucsess;
+    bool* sucsess;
 
     Settings tmp_settings;
 
@@ -33,7 +33,7 @@ private:
     CollisionMode collision_mode;
 
 public:
-    explicit SettingsWidget(Settings *set, SimulationState *sim, QWidget *parent = nullptr);
+    explicit SettingsWidget(Settings *set, SimulationState *sim, bool* ptr_succ, QWidget *parent = nullptr);
     ~SettingsWidget();
     void fillFileds();
     void fillCollisionModeFields();

@@ -91,25 +91,27 @@ public:
     bool operator != (PhObject& par)
     {
       if(this->getXPosition() != par.getXPosition())
-          return false;
+          return true;
       if(this->getYPosition() != par.getYPosition())
-          return false;
+          return true;
       if(this->getXSpeed() != par.getXSpeed())
-          return false;
+          return true;
       if(this->getYSpeed() != par.getYSpeed())
-          return false;
+          return true;
       if(this->getMass() != par.getMass())
-          return false;
+          return true;
       if(this->getRadius() != par.getRadius())
-          return false;
+          return true;
       if(this->getQ() != par.getQ())
-          return false;
+          return true;
       if(this->getColor() != par.getColor())
-          return false;
+          return true;
       if(this->getName() != par.getName())
-          return false;
+          return true;
+      if(this->getStatic() != par.getStatic())
+          return true;
 
-      return true;
+      return false;
     }
 
    bool operator == (PhObject& par)

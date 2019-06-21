@@ -3,7 +3,7 @@
 
 void SettingsWidget::closeEvent(QCloseEvent *e)
 {
-    if(sucsess)
+    if(*sucsess)
     {
         *ptr_settings = tmp_settings;
     }
@@ -37,7 +37,7 @@ void SettingsWidget::closeEvent(QCloseEvent *e)
     }
 }
 
-SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, QWidget *parent) :
+SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, bool* ptr_suc, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsWidget)
 {
@@ -46,7 +46,9 @@ SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, QWidget *par
     ptr_settings = set;
     ptr_sim_state = sim;
 
-    this->sucsess = false;
+    this->sucsess = ptr_suc;
+
+    *this->sucsess = false;
 
     tmp_settings = *ptr_settings;
 
@@ -441,7 +443,7 @@ void SettingsWidget::on_cancel_button_clicked()
 
 void SettingsWidget::on_accept_button_clicked()
 {   
-    sucsess = true;
+    *sucsess = true;
 
     close();
 }

@@ -137,7 +137,7 @@ bool SimulationState::WriteDataInFile(QString way /*= ""*/)
     if(way == "")
         way = this->file_way;
 
-    QFile WriteInFile("." + way);
+    QFile WriteInFile(way);
 
     if(!WriteInFile.open(QIODevice::Text | QIODevice::WriteOnly))
         return false;
@@ -150,8 +150,9 @@ bool SimulationState::WriteDataInFile(QString way /*= ""*/)
         writer << *K << endl;
         writer << *collision_mode << endl;
         writer << getBackGroundColorCode() << endl;
-        writer << CamX << endl;
-        writer << CamY << endl;
+        writer << *CamX << endl;
+        writer << *CamY << endl;
+        writer << Objects->size() << endl;
 
         for(auto &var : *Objects)
         {
@@ -184,41 +185,110 @@ bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
     QFile WriteInFile(way);
 
     double ms, q, r, xp, yp, xs, ys;
+    double cx, cy;
+    double G, K;
+    int col;
     int cm, bc;
     int stat;
+    int count, real_count = 0;
 
     QString name;
 
+    bool succes = true;
+
+    QString buffer;
+
+    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{1,}");
+    float_reg.setPatternSyntax(QRegExp::RegExp);
+
+    QRegExp int_reg("\\-?\\d{1,}");
+    int_reg.setPatternSyntax(QRegExp::RegExp);
 
     if(!WriteInFile.open(QIODevice::Text | QIODevice::ReadOnly))
         return false;
     else
     {
-        QTextStream writer(&WriteInFile);
-        writer.setRealNumberPrecision(20);
+        QTextStream reader(&WriteInFile);
+        reader.setRealNumberPrecision(20);
 
-        writer >> *G;
-        writer >> *K;
-        writer >> cm;
-        writer >> bc;
-        writer >> *CamX;
-        writer >> *CamY;
+        buffer = reader.readLine();
+        G = buffer.toDouble();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
 
-        setCollisionMode(cm);
-        setBackgroundColor(bc);
+        buffer = reader.readLine();
+        K = buffer.toDouble();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
 
-        for(auto &var : *Objects)
+        buffer = reader.readLine();
+        cm = buffer.toInt();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        buffer = reader.readLine();
+        bc = buffer.toInt();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        buffer = reader.readLine();
+        cx = buffer.toDouble();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        buffer = reader.readLine();
+        cy = buffer.toDouble();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+        buffer = reader.readLine();
+        count = buffer.toInt();
+        succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+
+        QVector<PhObject> Tmp_vector(count);
+
+        if(succes)
         {
-            writer >> name;
-            writer >> ms;
-            writer >> q;
-            writer >> r;
-            writer >> xp;
-            writer >> yp;
-            writer >> xs;
-            writer >> ys;
-            writer >> bc;
-            writer >> stat;
+        for(auto &var : Tmp_vector)
+        {
+            real_count++;
+
+            buffer = reader.readLine();
+            name = buffer;
+
+            buffer = reader.readLine();
+            ms = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            q = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            r = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            xp = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            yp = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            xs = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            ys = buffer.toDouble();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            col = buffer.toInt();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            stat = buffer.toInt();
+            succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            if(!succes)
+                break;
 
             var.setName(name);
             var.setMass(ms);
@@ -231,11 +301,26 @@ bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
             setColor(bc, var);
             var.setStatic(stat == 1);
         }
+        }
+
+        succes &= count == real_count;
+
+        if(!succes)
+            return succes;
+
+        *(this->G) = G;
+        *(this->K) = K;
+        setCollisionMode(cm);
+        setBackgroundColor(bc);
+        *(this->CamX) = cx;
+        *(this->CamY) = cy;
+
+        *Objects = Tmp_vector;
 
         WriteInFile.close();
     }
 
-    return true;
+    return succes;
 }
 
 void SimulationState::setFileWay(QString &way)
@@ -243,37 +328,8 @@ void SimulationState::setFileWay(QString &way)
     this->file_way = way;
 }
 
-/*void SimulationState::setPCollisionMode(CollisionMode *p)
+void SimulationState::setEmptyWay()
 {
-    collision_mode = p;
+    file_way = "";
 }
 
-void SimulationState::setPG(double *p)
-{
-    G = p;
-}
-
-void SimulationState::setPK(double *p)
-{
-    K = p;
-}
-
-void SimulationState::sPCamX(int *p)
-{
-    CamX = p;
-}
-
-void SimulationState::sPCamY(int *p)
-{
-    CamY = p;
-}
-
-void SimulationState::setPColor(QColor *p)
-{
-   background_color = p;
-}
-
-void SimulationState::setPVector(QVector<PhObject> *p)
-{
-    Objects = p;
-}*/

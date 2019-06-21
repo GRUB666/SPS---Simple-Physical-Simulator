@@ -25,10 +25,12 @@ public:
     int getColorCode(PhObject& obj);
     int getBackGroundColorCode();
 
-    bool WriteDataInFile(QString way /*= ""*/);
-    bool ReadDataFromFile(QString way /*= ""*/);
+    bool WriteDataInFile(QString way = "");
+    bool ReadDataFromFile(QString way = "");
 
     void setFileWay(QString &way);
+    void setEmptyWay();
+    QString getFileWay() { return file_way; };
     void setBackgroundColor(int code);
     void setCollisionMode(int mode);
 
