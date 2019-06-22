@@ -42,7 +42,7 @@ void Viewport::mouseMoveEvent(QMouseEvent *p)
     camY += (p->y() - bufferY)*distance_scale;
 
     update();
-    emit camScrolled(camX, camY);
+    emit camScrolled();
     bufferX = p->x();
     bufferY = p->y();
 }

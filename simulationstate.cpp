@@ -177,7 +177,7 @@ bool SimulationState::WriteDataInFile(QString way /*= ""*/)
     return true;
 }
 
-bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
+int SimulationState::ReadDataFromFile(QString way /*= ""*/)
 {
     if(way == "")
         way = this->file_way;
@@ -205,7 +205,7 @@ bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
     int_reg.setPatternSyntax(QRegExp::RegExp);
 
     if(!WriteInFile.open(QIODevice::Text | QIODevice::ReadOnly))
-        return false;
+        return 2;
     else
     {
         QTextStream reader(&WriteInFile);
@@ -298,7 +298,7 @@ bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
             var.setYPosition(yp);
             var.setXSpeed(xs);
             var.setYSpeed(ys);
-            setColor(bc, var);
+            setColor(col, var);
             var.setStatic(stat == 1);
         }
         }
@@ -306,7 +306,7 @@ bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
         succes &= count == real_count;
 
         if(!succes)
-            return succes;
+            return 1;
 
         *(this->G) = G;
         *(this->K) = K;
@@ -320,7 +320,7 @@ bool SimulationState::ReadDataFromFile(QString way /*= ""*/)
         WriteInFile.close();
     }
 
-    return succes;
+    return 0;
 }
 
 void SimulationState::setFileWay(QString &way)

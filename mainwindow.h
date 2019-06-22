@@ -18,11 +18,14 @@
 #include <QDir>
 #include <QCoreApplication>
 #include <QFileDialog>
+#include <QCloseEvent>
+
 #include "phobject.h"
 #include "generatewidget.h"
 #include "settingswidget.h"
 #include "simulationstate.h"
 #include "settings.h"
+
 
 
 
@@ -34,6 +37,9 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
+protected:
+    virtual void closeEvent(QCloseEvent *event);
 
 private:
     QVector<PhObject> Objects;
@@ -68,7 +74,7 @@ private:
     CollisionMode Current_Collision_Mode;
     QColor Current_Background_Color;
 
-    int BCamX, BCamY; //Буферы положений камеры
+    double BCamX, BCamY; //Буферы положений камеры
 
     //Настройки
 private:
@@ -109,6 +115,7 @@ private:
     bool vectorEquals(QVector<PhObject> &vec1, QVector<PhObject> &vec2);
     void save();
     void open(QString prev_way = "");
+    void setNewWindowTitle(QString& way);
 
 private:
     Ui::MainWindow *ui;
@@ -130,7 +137,7 @@ private slots:
    void on_Patterns_list_clicked(const QModelIndex &index);
    void on_ListObjects_clicked(const QModelIndex &index);
    void changeScaleSlot(int value);
-   void changeCamLabel(int x, int y);
+   void updateCameraLabel();
    void moveCameraToCenter();
    void dropCameraScale();
    void setBuffer();

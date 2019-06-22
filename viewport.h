@@ -59,7 +59,7 @@ public:
 
 signals:
     void whellScrolled(int value);
-    void camScrolled(int x, int y);
+    void camScrolled();
 };
 
 #endif // VIEWPORT_H

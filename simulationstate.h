@@ -26,13 +26,15 @@ public:
     int getBackGroundColorCode();
 
     bool WriteDataInFile(QString way = "");
-    bool ReadDataFromFile(QString way = "");
+    int ReadDataFromFile(QString way = "");
 
     void setFileWay(QString &way);
     void setEmptyWay();
     QString getFileWay() { return file_way; };
     void setBackgroundColor(int code);
     void setCollisionMode(int mode);
+
+    //void CameraPointers(double* cx, double* cy) { CamX = cx; CamY = cy; }
 
     CollisionMode* getCollisionModePointer(){ return collision_mode; }
     QColor* getBackcolorPointer(){ return background_color; }

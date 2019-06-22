@@ -2,6 +2,28 @@
 #include "mainwindow.h"
 #include <QDebug>
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if(hasModifided())
+    {
+        int res;
+
+        QMessageBox msgb;
+        msgb.setWindowTitle("Закрытие программы");
+        msgb.setText("Текущая модель была изменена");
+        msgb.setInformativeText("Хотите сохранить её, прежде чем закрыть программу?");
+        msgb.setStandardButtons(QMessageBox::Save | QMessageBox::No | QMessageBox::Cancel);
+        msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
+        msgb.setWindowIcon(windowIcon());
+        res = msgb.exec();
+
+        if(res == QMessageBox::Save)
+            saveModel();
+        if(res == QMessageBox::Cancel)
+            event->ignore();
+    }
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *pe)
 {
     if(pe->key() == 16777216 && FullScreenMode) //16777216 - Ecs
@@ -46,6 +68,9 @@ MainWindow::MainWindow(QWidget *parent) :
     if(Programm_Settings.OPEN_FULLSCREEN)
         QTimer::singleShot(0, this, SLOT(changeFullScreenMode()));
 
+    QString fs_str = "/Новая модель";
+    setNewWindowTitle(fs_str);
+
     resize(maximumSize());
     setConstFields();
     //----------------------
@@ -70,9 +95,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->add_button->setToolTip("Создать новый объект CTRL+A");
     ui->delete_button->setToolTip("Удалить выбранный объект CTRL+D");
-    ui->to_center_button->setToolTip("Переместить камеру в центр CTRL+C");
+    ui->to_center_button->setToolTip("Переместить камеру в центр CTRL+F");
     ui->to_center_button_2->setToolTip("Установить масштаб на 100% CTRL+L");
-    ui->checkpoint_button->setToolTip("Установить точку возврата CTRL+F");
+    ui->checkpoint_button->setToolTip("Установить точку возврата CTRL+C");
     ui->addpattern_button->setToolTip("Создать шаблон");
     ui->deletepattern_button->setToolTip("Удалить выбранный шаблон");
     ui->set_center_button->setToolTip("Сделать положение камеры началом координат CTRL+X");
@@ -86,11 +111,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->delete_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_D));
 
-    ui->to_center_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
+    ui->to_center_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F));
 
     ui->to_center_button_2->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
 
-    ui->checkpoint_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F));
+    ui->checkpoint_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
 
     ui->restart_button->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
 
@@ -196,7 +221,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Сигналы, связанные с графическим выводом---
     connect(ui->viewport, SIGNAL(whellScrolled(int)), this, SLOT(changeScaleSlot(int)));
-    connect(ui->viewport, SIGNAL(camScrolled(int, int)), this, SLOT(changeCamLabel(int, int)));
+    connect(ui->viewport, SIGNAL(camScrolled()), this, SLOT(updateCameraLabel()));
     connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
     //-------------------------------------------
 
@@ -405,7 +430,7 @@ void MainWindow::Restart()
         ui->viewport->setCamX(BCamX);
         ui->viewport->setCamY(BCamY);
 
-        changeCamLabel(BCamX, BCamY);
+        updateCameraLabel();
     }
     setFocus();
     updateList();
@@ -836,13 +861,16 @@ void MainWindow::createNewModel()
         msgb.setWindowTitle("Создание новой модели");
         msgb.setText("Текущая модель была изменена");
         msgb.setInformativeText("Хотите сохранить её?");
-        msgb.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgb.setStandardButtons(QMessageBox::Save | QMessageBox::No | QMessageBox::Cancel);
         msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
         msgb.setWindowIcon(windowIcon());
         res = msgb.exec();
 
-        if(res == QMessageBox::Yes)
+        if(res == QMessageBox::Save)
             saveModel();
+
+        if(res == QMessageBox::Cancel)
+            return;
 
         newModel();
     }
@@ -857,6 +885,8 @@ void MainWindow::save()
     {
         ui->statusBar->showMessage("Файл успешно сохранён");
         Save_Buffer_Objects = Objects;
+        QString way = Simulation_State.getFileWay();
+        setNewWindowTitle(way);
     }
 
     else
@@ -865,16 +895,24 @@ void MainWindow::save()
 
 void MainWindow::open(QString prev_way /*= ""*/)
 {
-    if(Simulation_State.ReadDataFromFile())
+    int result = Simulation_State.ReadDataFromFile();
+
+    if(result == 0)
     {
         ui->statusBar->showMessage("Файл успешно открыт");
         Save_Buffer_Objects = Objects;
+        Buffer_Objects = Objects;
+        BCamX = ui->viewport->getCamX();
+        BCamY = ui->viewport->getCamY();
+        updateCameraLabel();
+        QString way = Simulation_State.getFileWay();
+        setNewWindowTitle(way);
     }
 
-    else
+    if(result == 1) //Ошибка чтения файла
     {
         QMessageBox msgb;
-        msgb.setWindowTitle("Ошибка");
+        msgb.setWindowTitle("Ошибка чтения файла");
         msgb.setText("Некорретный файл модели!");
         msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Warning));
         msgb.setWindowIcon(windowIcon());
@@ -884,6 +922,26 @@ void MainWindow::open(QString prev_way /*= ""*/)
 
         Simulation_State.setFileWay(prev_way);
     }
+
+    if(result == 2) //Путь не существует (Путь не выбран)
+    {
+        ui->statusBar->showMessage("Отркытие файла отменено");
+        Simulation_State.setFileWay(prev_way);
+    }
+}
+
+void MainWindow::setNewWindowTitle(QString &way)
+{
+    QString name_string = "";
+    int i = way.size() - 1;
+
+    while(i >= 0 && way[i] != '/')
+    {
+        name_string.push_front(way[i]);
+        i--;
+    }
+
+    setWindowTitle(name_string + " - Simple Physical Simulator (SPS) 1.0 beta");
 }
 
 void MainWindow::saveModel()
@@ -896,9 +954,12 @@ void MainWindow::saveModel()
 
 void MainWindow::saveModelAs()
 {
+    bool tmp_pause = isPause;
+    setPause(true);
     QString way = QFileDialog::getSaveFileName(0, "Сохранить как...", "*.sps");
     Simulation_State.setFileWay(way);
     save();
+    setPause(tmp_pause);
 }
 
 void MainWindow::openModel()
@@ -907,17 +968,24 @@ void MainWindow::openModel()
     {
         int res;
 
+        bool tmp_pause = isPause;
+        setPause(true);
         QMessageBox msgb;
         msgb.setWindowTitle("Отркытие файла");
         msgb.setText("Текущая модель была изменена");
         msgb.setInformativeText("Хотите сохранить её, прежде чем открыть?");
-        msgb.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgb.setStandardButtons(QMessageBox::Save | QMessageBox::No | QMessageBox::Cancel);
         msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
         msgb.setWindowIcon(windowIcon());
         res = msgb.exec();
 
-        if(res == QMessageBox::Yes)
+        if(res == QMessageBox::Save)
             saveModel();
+
+        if(res == QMessageBox::Cancel)
+            return;
+
+        setPause(tmp_pause);
     }
 
     QString prev_way = Simulation_State.getFileWay();
@@ -950,8 +1018,14 @@ void MainWindow::newModel()
     setFocus();
     updateViewport();
 
+    ui->viewport->setCamX(0);
+    ui->viewport->setCamY(0);
+    updateCameraLabel();
+
     ui->statusBar->showMessage("Загружена новая модель");
 
+    QString str = "/Новая модель";
+    setNewWindowTitle(str);
     Simulation_State.setEmptyWay();
 }
 
@@ -984,7 +1058,7 @@ void MainWindow::followToObject(PhObject &obj)
     ui->viewport->setCamX(obj.getXPosition());
     ui->viewport->setCamY(obj.getYPosition());
 
-    changeCamLabel(obj.getXPosition(), obj.getYPosition());
+    updateCameraLabel();
 }
 
 void MainWindow::clearObjectsVector()
@@ -1415,15 +1489,15 @@ void MainWindow::changeScaleSlot(int value)
     ui->viewport->setScale((double)value / 100);
 }
 
-void MainWindow::changeCamLabel(int x, int y)
+void MainWindow::updateCameraLabel()
 {
-    ui->cam_pos_label->setText("Камера [" + QString::number(x) + "; " + QString::number(y) + "]");
+    ui->cam_pos_label->setText("Камера [" + QString::number(ui->viewport->getCamX()) + "; " + QString::number(ui->viewport->getCamY()) + "]");
 }
 
 void MainWindow::moveCameraToCenter()
 {
     ui->viewport->setCamPos();
-    changeCamLabel(0, 0);
+    updateCameraLabel();
     ui->statusBar->showMessage("Координаты камеры установлены на [0; 0]");
 }
 
@@ -1511,7 +1585,7 @@ void MainWindow::makeCenter()
     BCamY -= ui->viewport->getCamY();
 
     ui->viewport->setCamPos();
-    changeCamLabel(0, 0);
+    updateCameraLabel();
     ui->statusBar->showMessage("Начало координат установлено на положение камеры");
 
     if(checkIndexValid(current_index, Objects))
