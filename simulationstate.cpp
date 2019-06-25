@@ -240,6 +240,9 @@ int SimulationState::ReadDataFromFile(QString way /*= ""*/)
         succes &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
 
 
+        if(count < 0)
+            return 1;
+
         QVector<PhObject> Tmp_vector(count);
 
         if(succes)

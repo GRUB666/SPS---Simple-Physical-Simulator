@@ -1596,22 +1596,16 @@
     </property>
     <addaction name="generate_action"/>
    </widget>
-   <widget class="QMenu" name="menu_4">
-    <property name="title">
-     <string>Отладочная информация</string>
-    </property>
-   </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
      <string>Справка</string>
     </property>
-    <addaction name="action_5"/>
-    <addaction name="action_6"/>
+    <addaction name="doc_act"/>
+    <addaction name="about_act"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
-   <addaction name="menu_4"/>
    <addaction name="menu_5"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -1650,12 +1644,12 @@
     <string>Опциональная генерация</string>
    </property>
   </action>
-  <action name="action_5">
+  <action name="doc_act">
    <property name="text">
     <string>Документация</string>
    </property>
   </action>
-  <action name="action_6">
+  <action name="about_act">
    <property name="text">
     <string>О разработчике</string>
    </property>

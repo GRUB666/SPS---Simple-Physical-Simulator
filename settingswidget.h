@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QKeyEvent>
 
 namespace Ui {
 class SettingsWidget;
@@ -19,6 +20,7 @@ class SettingsWidget : public QDialog
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
+    virtual void keyPressEvent(QKeyEvent *ev);
 
 
 private:
@@ -42,6 +44,7 @@ public:
     void setBackgroundColor(int code);
     void setCollisionMode(int mode);
     bool hasModifided();
+    void closeWindow();
 
 private slots:
     void on_color_mode1_clicked();
@@ -89,8 +92,6 @@ private slots:
     void on_cancel_button_clicked();
 
     void on_accept_button_clicked();
-
-    void on_SettingsWidget_destroyed();
 
 private:
     Ui::SettingsWidget *ui;

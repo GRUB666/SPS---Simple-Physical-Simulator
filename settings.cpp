@@ -33,7 +33,7 @@ void Settings::SetDefaultSettings()
     SCALE_SPEED = 0.05;
     BACKGROUND_COLOR = Qt::white;
     RENDER_MODE = false;
-    SIMULATION_SPEED = 0.01;
+    SIMULATION_SPEED = 1;
     OPEN_FULLSCREEN = false;
 }
 

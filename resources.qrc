@@ -19,4 +19,11 @@
         <file>img/nullspeed.png</file>
         <file>img/clearall.png</file>
     </qresource>
+    <qresource prefix="/n">
+        <file>documentation/О разработчике.xml</file>
+        <file>documentation/Основная информация о программе.xml</file>
+        <file>documentation/Описание.xml</file>
+        <file>documentation/Теоретическая справка.xml</file>
+        <file>documentation/Расчёт сил.xml</file>
+    </qresource>
 </RCC>

@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("Simple Physical Simulator");
 
     QApplication a(argc, argv);
-    MainWindow w;
+    MainWindow w("1.1 beta");
     w.showMaximized();
 
     return a.exec();

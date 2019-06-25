@@ -37,6 +37,15 @@ void SettingsWidget::closeEvent(QCloseEvent *e)
     }
 }
 
+void SettingsWidget::keyPressEvent(QKeyEvent *e)
+{
+    if(e->key() == 16777216) //16777216 - Ecs
+    {
+        //*(ptr_sim_state->getBackcolorPointer()) = background_color;
+        //*(ptr_sim_state->getCollisionModePointer()) = collision_mode;
+    }
+}
+
 SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, bool* ptr_suc, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsWidget)
@@ -57,6 +66,8 @@ SettingsWidget::SettingsWidget(Settings *set, SimulationState *sim, bool* ptr_su
 
     ui->coll_mode1->setAutoExclusive(false);
     ui->coll_mode2->setAutoExclusive(false);
+
+
 
     ui->accept_button->setEnabled(false);
 
@@ -109,18 +120,10 @@ void SettingsWidget::fillFileds()
     ui->horizontalSlider->blockSignals(false);
     ui->spinBox->blockSignals(false);
 
-    if(ui->delta2->isChecked())
-    {
-        ui->sim_speed->blockSignals(true);
-        ui->sim_speed->setText(QString::number(tmp_settings.SIMULATION_SPEED));
-        ui->sim_speed->blockSignals(false);
-    }
+    ui->sim_speed->setText(QString::number(tmp_settings.SIMULATION_SPEED));
 
     ui->delta1->setChecked(!tmp_settings.RENDER_MODE);
     ui->delta2->setChecked(tmp_settings.RENDER_MODE);
-
-    ui->sim_speed->setEnabled(tmp_settings.RENDER_MODE);
-    ui->sim_speed->setText(QString::number(tmp_settings.SIMULATION_SPEED));
 
     ui->fullscreen_box->blockSignals(true);
     ui->fullscreen_box->setChecked(tmp_settings.OPEN_FULLSCREEN);
@@ -283,6 +286,10 @@ bool SettingsWidget::hasModifided()
     return *ptr_settings != tmp_settings || background_color != *(ptr_sim_state->getBackcolorPointer()) || *(ptr_sim_state->getCollisionModePointer()) != collision_mode;
 }
 
+void SettingsWidget::closeWindow()
+{
+}
+
 void SettingsWidget::on_color_mode1_clicked()
 {
     fillBackcolorBox();
@@ -400,8 +407,6 @@ void SettingsWidget::on_not_elastic_box_clicked()
 void SettingsWidget::on_delta1_clicked(bool checked)
 {
     tmp_settings.RENDER_MODE = !checked;
-    ui->free_lab_9->setEnabled(!checked);
-    ui->sim_speed->setEnabled(!checked);
 
     ui->accept_button->setEnabled(hasModifided());
 }
@@ -409,8 +414,6 @@ void SettingsWidget::on_delta1_clicked(bool checked)
 void SettingsWidget::on_delta2_clicked(bool checked)
 {
     tmp_settings.RENDER_MODE = checked;
-    ui->free_lab_9->setEnabled(checked);
-    ui->sim_speed->setEnabled(checked);
 
     ui->accept_button->setEnabled(hasModifided());
 }
@@ -434,6 +437,8 @@ void SettingsWidget::on_drop_settings_clicked()
     tmp_settings.SetDefaultSettings();
 
     fillFileds();
+
+    ui->accept_button->setEnabled(hasModifided());
 }
 
 void SettingsWidget::on_cancel_button_clicked()
@@ -448,8 +453,4 @@ void SettingsWidget::on_accept_button_clicked()
     close();
 }
 
-void SettingsWidget::on_SettingsWidget_destroyed()
-{
-
-}
 

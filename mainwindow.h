@@ -25,6 +25,7 @@
 #include "settingswidget.h"
 #include "simulationstate.h"
 #include "settings.h"
+#include "documentationwidget.h"
 
 
 
@@ -51,6 +52,9 @@ private:
     bool pattern_mode;
 
     QString settings_way;
+    QString patterns_way;
+
+    QString version;
 
     QTimer* timer;
 
@@ -86,7 +90,7 @@ protected:
     virtual void keyPressEvent(QKeyEvent* pe);
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QString version, QWidget *parent = nullptr);
     ~MainWindow();
 
 
@@ -116,6 +120,9 @@ private:
     void save();
     void open(QString prev_way = "");
     void setNewWindowTitle(QString& way);
+    void savePatterns();
+    void loadPatterns();
+    void addStandartPattern();
 
 private:
     Ui::MainWindow *ui;
@@ -136,6 +143,7 @@ private slots:
    void on_Patterns_list_currentRowChanged(int currentRow);
    void on_Patterns_list_clicked(const QModelIndex &index);
    void on_ListObjects_clicked(const QModelIndex &index);
+   void changeScaleSlot(double value);
    void changeScaleSlot(int value);
    void updateCameraLabel();
    void moveCameraToCenter();
@@ -157,6 +165,7 @@ private slots:
    void saveModel();
    void saveModelAs();
    void openModel();
+   void openDocumentation();
 };
 
 #endif // MAINWINDOW_H

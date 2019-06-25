@@ -15,7 +15,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
         msgb.setStandardButtons(QMessageBox::Save | QMessageBox::No | QMessageBox::Cancel);
         msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Question));
         msgb.setWindowIcon(windowIcon());
+
+        bool tmp_pause = isPause;
+        setPause(true);
+
         res = msgb.exec();
+
+        setPause(tmp_pause);
 
         if(res == QMessageBox::Save)
             saveModel();
@@ -35,17 +41,9 @@ void MainWindow::keyPressEvent(QKeyEvent *pe)
     {
         deleteObject();
     }
-
-    /*if(pe->key() == Qt::Key_0)
-    {
-        for(auto &var : Objects)
-        {
-            var.setSpeed(-var.getXSpeed(), - var.getYSpeed());
-        }
-    }*/
 }
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QString version, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
@@ -53,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Установка настроек приложения--------------
     settings_way = QCoreApplication::applicationDirPath() + "/Settings/Settings.st";
+    patterns_way = QCoreApplication::applicationDirPath() + "/Settings/Patterns.pt";
 
     loadSettings();
 
@@ -68,6 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(Programm_Settings.OPEN_FULLSCREEN)
         QTimer::singleShot(0, this, SLOT(changeFullScreenMode()));
 
+    this->version = version;
     QString fs_str = "/Новая модель";
     setNewWindowTitle(fs_str);
 
@@ -140,15 +140,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->open_model->setShortcut(QKeySequence("CTRL+O"));
 
     ui->save_current_model->setShortcut(QKeySequence("CTRL+S"));
+
+    ui->doc_act->setShortcut(QKeySequence("F1"));
     //----------------------------------------------
 
-
     //Инициализация шаблонов
-    current_pattern = 0;
-    PhObject obj;
-    obj.setName("Стандартный");
-    Patterns.push_back(obj);
-    updatePatternsList();
+    loadPatterns();
     setPatternMode(false);
     //--------------------
 
@@ -220,7 +217,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //------------------
 
     //Сигналы, связанные с графическим выводом---
-    connect(ui->viewport, SIGNAL(whellScrolled(int)), this, SLOT(changeScaleSlot(int)));
+    connect(ui->viewport, SIGNAL(whellScrolled(double)), this, SLOT(changeScaleSlot(double)));
     connect(ui->viewport, SIGNAL(camScrolled()), this, SLOT(updateCameraLabel()));
     connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
     //-------------------------------------------
@@ -233,6 +230,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->save_current_model, SIGNAL(triggered()), this, SLOT(saveModel()));
     connect(ui->save_current_model_as, SIGNAL(triggered()), this, SLOT(saveModelAs()));
     connect(ui->open_model, SIGNAL(triggered()), this, SLOT(openModel()));
+    connect(ui->doc_act, SIGNAL(triggered()), this, SLOT(openDocumentation()));
     //------------------------------
 }
 
@@ -257,6 +255,7 @@ void MainWindow::ForceCalc()
 
     for(int i = 0; i < Objects.size(); i++)
     {
+        begin = std::chrono::steady_clock::now();
         ax = 0;
         ay = 0;
         not_elastic_check = true;
@@ -295,14 +294,15 @@ void MainWindow::ForceCalc()
                 ay += F*std::sin(angle) / abs(Objects[i].getMass());
             }
 
-
         }
         }
 
+        //not_elastic_check - проверка на то, было ли столкновение при неэластичной коллизии
         if((Current_Collision_Mode == CollisionMode::NOT_ELASTIC && not_elastic_check) || Current_Collision_Mode == CollisionMode::MERGE || Current_Collision_Mode == CollisionMode::ELASTIC)
         {
             bool needles = true;
 
+            //Проверка на то, будет ли при движении в заданном направлении столкновение, если будет, то двигать не нужно
             if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
             {
                 long double new_x, new_y;
@@ -317,21 +317,36 @@ void MainWindow::ForceCalc()
                 }
             }
 
+
+            auto end = std::chrono::steady_clock::now();
+
+            auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+
+            delta += elapsed_ms.count();
+
+            //needles - Нужно ли двигать объект (может быть false только при неэластичном столкновении)
             if(needles)
             {
-             Objects[i].setXSpeed(Objects[i].getXSpeed() + ax);
-             Objects[i].setYSpeed(Objects[i].getYSpeed() + ay);
+             if(!Programm_Settings.RENDER_MODE)
+                 delta = 1;
 
-             Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed());
-             Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed());
+             Objects[i].setXSpeed(Objects[i].getXSpeed() + ax * delta * Programm_Settings.SIMULATION_SPEED);
+             Objects[i].setYSpeed(Objects[i].getYSpeed() + ay * delta * Programm_Settings.SIMULATION_SPEED);
+
+             Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
+             Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
             }
+
+            delta = 0;
         }
 
-
-        if(follow_to_focus_object && Objects[i].getFocus())
+        if(follow_to_focus_object && Objects[i].getFocus())//Слежка за выбранным объектом если это необходимо
             followToObject(Objects[i]);
         }
 
+        begin = std::chrono::steady_clock::now();
+
+        //Проверка столкновений
         for(int j = 0; j < Objects.size(); j++)
         {   
             if(j != i)
@@ -392,16 +407,14 @@ void MainWindow::ForceCalc()
                 }
             }
         }
+
+        auto end = std::chrono::steady_clock::now();
+        auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+        delta = elapsed_ms.count();
     }
 
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
-    delta = elapsed_ms.count();
-
-
-    if(current_index >= 0 && current_index < Objects.size())
+    if(current_index >= 0 && current_index < Objects.size()) //Вывод изменённой информации, если выбран какой то объект
     printToPanel(Objects[current_index], hideAdditionalInfo);
-
     }
 
     updateViewport();
@@ -499,13 +512,9 @@ void MainWindow::addObject()
 
     else //В случае отсутствия шаблона
     {
-        obj.setName("Стандартный");
-        Patterns.push_back(obj);
+        addStandartPattern();
         updatePatternsList();
-        current_pattern = 0;
-        ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
         ui->statusBar->showMessage("Для создания нового объекта был использован Стандартный шаблон, так как другие шаблоны отсутствуют");
-        ui->deletepattern_button->setEnabled(true);
     }
 
     obj.setName(obj.getName() + " " + QString::number(Objects.size()));
@@ -941,7 +950,182 @@ void MainWindow::setNewWindowTitle(QString &way)
         i--;
     }
 
-    setWindowTitle(name_string + " - Simple Physical Simulator (SPS) 1.0 beta");
+    setWindowTitle(name_string + " - Simple Physical Simulator (SPS)" + " " + version);
+}
+
+void MainWindow::savePatterns()
+{
+    QFile patterns_file(patterns_way);
+
+    QTextStream writer(&patterns_file);
+
+    QDir dir(QCoreApplication::applicationDirPath());
+
+    if(!dir.exists("Settings"))
+        dir.mkdir("Settings");
+
+    if(patterns_file.open(QIODevice::Text | QIODevice::WriteOnly))
+    {
+        writer.setRealNumberPrecision(20);
+
+        writer << Patterns.size() << endl;
+
+        for(auto &var : Patterns)
+        {
+            writer << var.getName() << endl;
+            writer << (double)var.getMass() << endl;
+            writer << (double)var.getQ() << endl;
+            writer << (double)var.getRadius() << endl;
+
+            {
+                if(var.getColor() == Qt::black)
+                    writer << 0 << endl;
+                if(var.getColor() == Qt::red)
+                    writer << 1 << endl;
+                if(var.getColor() == Qt::green)
+                    writer << 2 << endl;
+                if(var.getColor() == Qt::blue)
+                    writer << 3 << endl;
+                if(var.getColor() == Qt::yellow)
+                    writer << 4 << endl;
+            }
+
+            writer << var.getStatic() << endl;
+        }
+
+
+        patterns_file.close();
+    }
+}
+
+void MainWindow::loadPatterns()
+{
+    QFile patterns_file(patterns_way);
+    QTextStream reader(&patterns_file);
+    QString buffer;
+
+    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{1,}");
+    float_reg.setPatternSyntax(QRegExp::RegExp);
+
+    QRegExp int_reg("\\-?\\d{1,}");
+    int_reg.setPatternSyntax(QRegExp::RegExp);
+
+    bool isCorrect = true;
+
+    int count;
+    int color;
+
+    if(patterns_file.exists())
+    {
+        if(patterns_file.open(QIODevice::Text | QIODevice::ReadOnly))
+        {
+        reader.setRealNumberPrecision(20);
+
+        buffer = reader.readLine();
+        count = buffer.toInt();
+        isCorrect &= (float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer)) && count >= 0;
+        Patterns.resize(count);
+
+        for(int i = 0; i < count && isCorrect; i++)
+        {
+            buffer = reader.readLine();
+            Patterns[i].setName(buffer);
+
+            buffer = reader.readLine();
+            Patterns[i].setMass(buffer.toDouble());
+            isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            Patterns[i].setQ(buffer.toDouble());
+            isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            Patterns[i].setRadius(buffer.toDouble());
+            isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            color = buffer.toInt();
+            isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            buffer = reader.readLine();
+            Patterns[i].setStatic(buffer.toInt());
+            isCorrect &= float_reg.exactMatch(buffer) || int_reg.exactMatch(buffer);
+
+            switch (color)
+            {
+            case 0:
+                Patterns[i].setColor(Qt::black);
+                break;
+            case 1:
+                Patterns[i].setColor(Qt::red);
+                break;
+            case 2:
+                Patterns[i].setColor(Qt::green);
+                break;
+            case 3:
+                Patterns[i].setColor(Qt::blue);
+                break;
+            case 4:
+                Patterns[i].setColor(Qt::yellow);
+                break;
+
+            default:
+                Patterns[i].setColor(Qt::black);
+                break;
+            }
+        }
+
+        patterns_file.close();
+
+        if(!isCorrect)
+        {
+            QMessageBox msgb;
+            msgb.setWindowTitle("Предупреждение");
+            msgb.setText("Файл шаблонов был повреждён");
+            msgb.setInformativeText("Шаблоны будут загружены по умолчанию");
+            msgb.setIcon(QMessageBox::Icon(QMessageBox::Icon::Information));
+            msgb.setWindowIcon(windowIcon());
+
+            msgb.exec();
+
+            Patterns.clear();
+            addStandartPattern();
+            savePatterns();
+        }
+
+        if(Patterns.isEmpty())
+        {
+            addStandartPattern();
+            savePatterns();
+        }
+
+        }
+
+        else
+        {
+            QMessageBox::warning(this, "Ошибка", "Не доступа к файлу шаблонов, программа может работать некорректно (Шаблоны будут загружены по умолчанию)");
+            addStandartPattern();
+        }
+    }
+
+    else
+    {
+        addStandartPattern();
+        savePatterns();
+    }
+
+    current_pattern = 0;
+    updatePatternsList();
+}
+
+void MainWindow::addStandartPattern()
+{
+    PhObject obj;
+    obj.setName("Стандартный");
+    Patterns.push_front(obj);
+    current_pattern = 0;
+    ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
+    ui->deletepattern_button->setEnabled(true);
 }
 
 void MainWindow::saveModel()
@@ -997,12 +1181,22 @@ void MainWindow::openModel()
     setConstFields();
 }
 
+void MainWindow::openDocumentation()
+{
+    DocumentationWidget win;
+
+    win.setWindowIcon(windowIcon());
+
+    win.exec();
+}
+
 //Создание новой модели
 void MainWindow::newModel()
 {
     Objects.clear();
 
     Save_Buffer_Objects = Objects;
+    Buffer_Objects = Objects;
 
     Current_Collision_Mode = Programm_Settings.COLLISION_MODE;
     ui->viewport->setBackgroundColor(Programm_Settings.BACKGROUND_COLOR);
@@ -1075,8 +1269,6 @@ void MainWindow::loadSettings()
     QTextStream reader(&settings_file);
     QString buffer;
     int pos = 0;
-
-    //\\-?\\d{1,}\\.?\\d{1,}
 
     QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{1,}");
     float_reg.setPatternSyntax(QRegExp::RegExp);
@@ -1358,6 +1550,8 @@ void MainWindow::changeParameters()
     Patterns[current_pattern].setRadius(ui->rad_line->text().toDouble());
     Patterns[current_pattern].setStatic(ui->isMoveBox->isChecked());
     Patterns[current_pattern].setColor(getColorBox());
+
+    savePatterns();
     }
 
 }
@@ -1447,6 +1641,8 @@ void MainWindow::updatePatternsList()
         else
             ui->Patterns_list->addItem(var.getName());
     }
+
+    savePatterns();
 }
 
 void MainWindow::setPatternMode(bool val)
@@ -1482,11 +1678,16 @@ void MainWindow::on_ListObjects_clicked(const QModelIndex &index)
     setFocus(ui->ListObjects->currentRow());
 }
 
-void MainWindow::changeScaleSlot(int value)
+void MainWindow::changeScaleSlot(double value)
 {
     ui->scale_slider->setValue(value);
     ui->scale_label->setText(QString::number(value) + "%");
     ui->viewport->setScale((double)value / 100);
+}
+
+void MainWindow::changeScaleSlot(int value)
+{
+    changeScaleSlot((double)value);
 }
 
 void MainWindow::updateCameraLabel()

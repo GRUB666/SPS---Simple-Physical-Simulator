@@ -25,6 +25,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        documentationwidget.cpp \
         generatewidget.cpp \
         main.cpp \
         mainwindow.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
         viewport.cpp
 
 HEADERS += \
+        documentationwidget.h \
         generatewidget.h \
         mainwindow.h \
         phobject.h \
@@ -44,6 +46,7 @@ HEADERS += \
         viewport.h
 
 FORMS += \
+        documentationwidget.ui \
         generatewidget.ui \
         mainwindow.ui \
         settingswidget.ui

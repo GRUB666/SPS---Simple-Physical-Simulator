@@ -58,7 +58,7 @@ public:
     void setPaintVector(QVector<PhObject>& vec);
 
 signals:
-    void whellScrolled(int value);
+    void whellScrolled(double value);
     void camScrolled();
 };
 
