@@ -1212,6 +1212,9 @@ void MainWindow::newModel()
     setFocus();
     updateViewport();
 
+    G = Programm_Settings.G;
+    k = Programm_Settings.K;
+
     ui->viewport->setCamX(0);
     ui->viewport->setCamY(0);
     updateCameraLabel();

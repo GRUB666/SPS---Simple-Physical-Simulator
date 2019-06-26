@@ -25,5 +25,8 @@
         <file>documentation/Описание.xml</file>
         <file>documentation/Теоретическая справка.xml</file>
         <file>documentation/Расчёт сил.xml</file>
+        <file>documentation/Столкновения.xml</file>
+        <file>documentation/Слияние.xml</file>
+        <file>documentation/Изменение скорости и положения.xml</file>
     </qresource>
 </RCC>
