@@ -27,6 +27,7 @@
 #include "settings.h"
 #include "documentationwidget.h"
 
+#define PI 3.141592653589793238462643
 
 
 
@@ -72,7 +73,6 @@ private:
     double G, k;
     bool isPause;
     bool FullScreenMode;
-    double sim_speed;
     int delta;
     bool follow_to_focus_object;
     CollisionMode Current_Collision_Mode;
@@ -123,12 +123,16 @@ private:
     void savePatterns();
     void loadPatterns();
     void addStandartPattern();
+    long double getDistanceOfCollision(int i, int j);
+    void ForceCalc();
+    void MoveObjects();
+    void CollisionsCheck();
 
 private:
     Ui::MainWindow *ui;
 
 private slots:
-   void ForceCalc();
+   void everyTickSlot();
    void setPause ();
    void Restart  ();
    void addObject();

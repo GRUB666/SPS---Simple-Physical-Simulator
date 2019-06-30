@@ -13,6 +13,7 @@ PhObject::PhObject(long double mass, long double rad, long double q, long double
     this->Name = "Object";
     this->isStatic = false;
     this->inFocus = false;
+    xAccel = yAccel = 0;
 }
 
 void PhObject::setPosition(long double x, long double y)

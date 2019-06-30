@@ -183,7 +183,7 @@ MainWindow::MainWindow(QString version, QWidget *parent) :
     //Соединение сигналов и слотов--------------------------------------------
 
     //Сигналы кнопок-------------------
-    connect(timer, SIGNAL(timeout()), this, SLOT(ForceCalc()));
+    connect(timer, SIGNAL(timeout()), this, SLOT(everyTickSlot()));
     connect(ui->pause_button, SIGNAL(clicked()), this, SLOT(setPause()));
     connect(ui->restart_button, SIGNAL(clicked()), this, SLOT(Restart()));
     connect(ui->add_button, SIGNAL(clicked()), this, SLOT(addObject()));
@@ -239,122 +239,83 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::ForceCalc()
+void MainWindow::ForceCalc() //Рассчитывает силы и ускорения, действующие на все тела симуляции
 {
-    long double F;
-    long double angle;
-    long double ax, ay;
-    long double distance;
-    bool hideAdditionalInfo = true;
-    bool not_elastic_check;
-
-    auto begin = std::chrono::steady_clock::now();
-
-    if(!isPause)
+    for(int i = 0; i < Objects.size() && Objects[i].getMass() != 0; i++)
     {
+        long double ax = 0, ay = 0;
+        long double distance;
+
+        for(int j = 0; j < Objects.size(); j++)
+        {
+            if(i != j && getDistance(i, j) != 0) //Чтобы не делать рассчёт для одного и того же объекта
+            {
+
+            distance = getDistance(i, j);
+
+            long double F;
+            long double angle;
+
+            F = G * Objects[i].getMass() * Objects[j].getMass()
+                                    / std::pow(distance, 2);
+
+            F += -k * Objects[i].getQ() * Objects[j].getQ()
+                                    / std::pow(distance, 2);
+
+            angle = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
+
+            ax += F*std::cos(angle) / abs(Objects[i].getMass());
+            ay += F*std::sin(angle) / abs(Objects[i].getMass());
+
+            }
+        }
+
+        Objects[i].setXAccel(ax);
+        Objects[i].setYAccel(ay);
+    }
+}
+
+void MainWindow::MoveObjects()
+{
+    if(!Programm_Settings.RENDER_MODE)
+        delta = 1;
 
     for(int i = 0; i < Objects.size(); i++)
     {
-        begin = std::chrono::steady_clock::now();
-        ax = 0;
-        ay = 0;
-        not_elastic_check = true;
-
-        if(!Objects[i].getStatic()) //Проверка на статичность
+        if(Objects[i].getStatic())
         {
-        if(Objects[i].getMass() != 0) //Проверка на наличие массы
-        {
-        for(int j = 0; j < Objects.size(); j++)
-        {
-            distance = getDistance(i, j);
-
-            if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
-                not_elastic_check = distance > (Objects[i].getRadius()*10 + Objects[j].getRadius()*10);
-
-            if(i != j && distance != 0 && not_elastic_check)
-            {
-                F = G * Objects[i].getMass() * Objects[j].getMass()
-                        / std::pow(distance, 2);
-
-                F += -k * Objects[i].getQ() * Objects[j].getQ()
-                        / std::pow(distance, 2);
-
-
-                angle = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
-
-                if(Current_Collision_Mode == CollisionMode::ELASTIC)
-                {
-                if(distance <= (Objects[i].getRadius()*10 + Objects[j].getRadius()*10))
-                {
-                    F += -(1/distance - 1/(Objects[i].getRadius()*10 + Objects[j].getRadius()*10));
-                }
-                }
-
-                ax += F*std::cos(angle) / abs(Objects[i].getMass());
-                ay += F*std::sin(angle) / abs(Objects[i].getMass());
-            }
-
-        }
+            Objects[i].setAccel(0, 0); //Сбрасываем все харакетристики движения, если тело статично (Сброс скорости нужен на случай, если она была установлена вручную)
+            Objects[i].setSpeed(0, 0);
         }
 
-        //not_elastic_check - проверка на то, было ли столкновение при неэластичной коллизии
-        if((Current_Collision_Mode == CollisionMode::NOT_ELASTIC && not_elastic_check) || Current_Collision_Mode == CollisionMode::MERGE || Current_Collision_Mode == CollisionMode::ELASTIC)
-        {
-            bool needles = true;
+        Objects[i].setXSpeed(Objects[i].getXSpeed() + Objects[i].getXAccel() * delta * Programm_Settings.SIMULATION_SPEED);
+        Objects[i].setYSpeed(Objects[i].getYSpeed() + Objects[i].getYAccel() * delta * Programm_Settings.SIMULATION_SPEED);
 
-            //Проверка на то, будет ли при движении в заданном направлении столкновение, если будет, то двигать не нужно
-            if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
-            {
-                long double new_x, new_y;
-
-                new_x = Objects[i].getXSpeed() + ax + Objects[i].getXPosition();
-                new_y = Objects[i].getYSpeed() + ay + Objects[i].getYPosition();
-
-                for(int j = 0; j < Objects.size(); j++)
-                {
-                    if(getDistance(new_x, new_y, Objects[j]) <= Objects[i].getRadius()*10 + Objects[j].getRadius()*10 && j != i)
-                        needles = false;
-                }
-            }
-
-
-            auto end = std::chrono::steady_clock::now();
-
-            auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
-
-            delta += elapsed_ms.count();
-
-            //needles - Нужно ли двигать объект (может быть false только при неэластичном столкновении)
-            if(needles)
-            {
-             if(!Programm_Settings.RENDER_MODE)
-                 delta = 1;
-
-             Objects[i].setXSpeed(Objects[i].getXSpeed() + ax * delta * Programm_Settings.SIMULATION_SPEED);
-             Objects[i].setYSpeed(Objects[i].getYSpeed() + ay * delta * Programm_Settings.SIMULATION_SPEED);
-
-             Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
-             Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
-            }
-
-            delta = 0;
-        }
+        Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
+        Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
 
         if(follow_to_focus_object && Objects[i].getFocus())//Слежка за выбранным объектом если это необходимо
-            followToObject(Objects[i]);
-        }
+           followToObject(Objects[i]);
+    }
+}
 
-        begin = std::chrono::steady_clock::now();
+void MainWindow::CollisionsCheck()
+{
+    bool ellastic_check_array[Objects.size()];
 
-        //Проверка столкновений
+    for(int i = 0; i < Objects.size(); i++) { ellastic_check_array[i] = false; }
+
+
+    for(int i = 0; i < Objects.size(); i++)
+    {
         for(int j = 0; j < Objects.size(); j++)
-        {   
-            if(j != i)
-            {
-                if (i == Objects.size() || j == Objects.size())
-                        break;
+        {
+            if(i >= Objects.size() || j >= Objects.size())
+                break;
 
-                if(getDistance(i, j) <= Objects[i].getRadius()*10 + Objects[j].getRadius()*10)
+            if(getDistanceOfCollision(i, j) >= 0 && i != j) //Если расстояние между центрами меньше либо равно сумме их радиусов
+            {
+                if(Current_Collision_Mode == CollisionMode::MERGE)
                 {
                     long double Vx, Vy;
                     long double xc, yc;
@@ -365,60 +326,214 @@ void MainWindow::ForceCalc()
                     xc = (Objects[i].getMass() * Objects[i].getXPosition() + Objects[j].getMass() * Objects[j].getXPosition()) / (Objects[i].getMass() + Objects[j].getMass());
                     yc = (Objects[i].getMass() * Objects[i].getYPosition() + Objects[j].getMass() * Objects[j].getYPosition()) / (Objects[i].getMass() + Objects[j].getMass());
 
-                    if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
+                    if(abs(Objects[i].getMass()) >= abs(Objects[j].getMass()))
                     {
-                        Objects[j].setSpeed(Vx, Vy);
-                        Objects[i].setSpeed(Vx, Vy);
-                    }
+                       if(Objects[i].getMass() == Objects[j].getMass() && abs(Objects[i].getQ()) == abs(Objects[j].getQ()) && Objects[i].getQ() != 0)
+                          Objects[i].setColor(Qt::black);
 
-                    if(Current_Collision_Mode != CollisionMode::ELASTIC && Current_Collision_Mode != CollisionMode::NOT_ELASTIC)
-                    {
-                    if(Objects[i].getMass() >= Objects[j].getMass())
-                    {
-                        if(Objects[i].getMass() == Objects[j].getMass() && Objects[i].getQ() == -Objects[j].getQ() && Objects[i].getQ() != 0)
-                            Objects[i].setColor(Qt::black);
+                       Objects[i].setPosition(xc, yc);
+                       Objects[i].setRadius(std::sqrt(std::pow(Objects[i].getRadius(), 2) + std::pow(Objects[j].getRadius(), 2)));
+                       Objects[i].setSpeed(Vx, Vy);
+                       Objects[i].setMass(Objects[i].getMass() + Objects[j].getMass());
+                       Objects[i].setQ(Objects[i].getQ() + Objects[j].getQ());
 
-                        Objects[i].setPosition(xc, yc);
-                        Objects[i].setRadius(sqrt(pow(Objects[i].getRadius(), 2) + pow(Objects[j].getRadius(), 2)));
-                        Objects[i].setSpeed(Vx, Vy);
-                        Objects[i].setMass(Objects[i].getMass() + Objects[j].getMass());
-                        Objects[i].setQ(Objects[i].getQ() + Objects[j].getQ());
-
-                        if(i == current_index)
-                            hideAdditionalInfo = false;
-
-                        deleteObject(j);
-                    }
+                       deleteObject(j);
+                     }
 
                     else
                     {
+                        if(Objects[i].getMass() == Objects[j].getMass() && abs(Objects[i].getQ()) == abs(Objects[j].getQ()) && Objects[i].getQ() != 0)
+                           Objects[j].setColor(Qt::black);
+
                         Objects[j].setPosition(xc, yc);
-                        Objects[j].setRadius(sqrt(pow(Objects[i].getRadius(), 2) + pow(Objects[j].getRadius(), 2)));
+                        Objects[j].setRadius(std::sqrt(std::pow(Objects[i].getRadius(), 2) + std::pow(Objects[j].getRadius(), 2)));
                         Objects[j].setSpeed(Vx, Vy);
                         Objects[j].setMass(Objects[i].getMass() + Objects[j].getMass());
                         Objects[j].setQ(Objects[i].getQ() + Objects[j].getQ());
 
-                        if(j == current_index)
-                            hideAdditionalInfo = false;
-
                         deleteObject(i);
                     }
+                }
+
+                if(Current_Collision_Mode == CollisionMode::ELASTIC)
+                {
+                    long double rad_speed_1, rad_speed_2;
+                    long double dist_time;
+                    long double alpha1 = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
+                    //long double alpha2 = std::atan2(Objects[i].getYPosition() - Objects[j].getYPosition(), Objects[i].getXPosition() - Objects[j].getXPosition());
+                    long double V1_vector, V2_vector;
+                    long double normal_speed_1, normal_speed_2;
+                    long double v_alpha1 = std::atan2(Objects[i].getYSpeed(), Objects[i].getXSpeed());
+                    long double v_alpha2 = std::atan2(Objects[j].getYSpeed(), Objects[j].getXSpeed());
+
+                    V1_vector = std::sqrt(std::pow(Objects[i].getXSpeed(), 2) + std::pow(Objects[i].getYSpeed(), 2));
+                    V2_vector = std::sqrt(std::pow(Objects[j].getXSpeed(), 2) + std::pow(Objects[j].getYSpeed(), 2));
+
+                    Objects[i].setXPosition(Objects[i].getXPosition() - Objects[i].getXSpeed()); //Двигаем назад
+                    Objects[i].setYPosition(Objects[i].getYPosition() - Objects[i].getYSpeed());
+
+                    Objects[j].setXPosition(Objects[j].getXPosition() - Objects[j].getXSpeed());
+                    Objects[j].setYPosition(Objects[j].getYPosition() - Objects[j].getYSpeed());
+
+                    long double dist = getDistanceOfCollision(i, j);
+
+                    long double tmp_rad1 = rad_speed_1 = V1_vector * std::cos(alpha1 - v_alpha1);
+                    long double tmp_rad2 = rad_speed_2 = V2_vector * std::cos(alpha1 - v_alpha2);
+
+                    dist_time = (abs(tmp_rad1) + abs(tmp_rad2)) / dist;
+
+                    normal_speed_1 = V1_vector * std::cos(PI * 0.5 - (alpha1 - v_alpha1));
+                    normal_speed_2 = V2_vector * std::cos(PI * 0.5 - (alpha1 - v_alpha2));
+
+                    rad_speed_1 = (2*Objects[j].getMass() * tmp_rad2 + tmp_rad1*(Objects[i].getMass() - Objects[j].getMass())) / (Objects[i].getMass() + Objects[j].getMass());
+
+                    rad_speed_2 = (2*Objects[i].getMass() * tmp_rad1 + tmp_rad2*(Objects[j].getMass() - Objects[i].getMass())) / (Objects[i].getMass() + Objects[j].getMass());
+
+                    V1_vector = std::sqrt(std::pow(rad_speed_1, 2) + std::pow(normal_speed_1, 2));
+                    V2_vector = std::sqrt(std::pow(rad_speed_2, 2) + std::pow(normal_speed_2, 2));
+
+                    if(!ellastic_check_array[i])
+                    {
+                    Objects[i].setXSpeed(V1_vector * std::cos(alpha1 - std::atan2(normal_speed_1, rad_speed_1)));
+                    Objects[i].setYSpeed(V1_vector * std::sin(alpha1 - std::atan2(normal_speed_1, rad_speed_1)));
+
+                    if(dist <= 0)
+                    {
+                        Objects[i].setXPosition(Objects[i].getXPosition() + tmp_rad1*std::cos(alpha1) * dist_time);
+                        Objects[i].setYPosition(Objects[i].getYPosition() + tmp_rad1*std::sin(alpha1) * dist_time);
                     }
+
+                    else
+                    {
+                        Objects[i].setXPosition(Objects[i].getXPosition() - dist * std::cos(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                        Objects[i].setYPosition(Objects[i].getYPosition() - dist * std::sin(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                    }
+
+                    }
+
+                    if(!ellastic_check_array[j])
+                    {
+                    Objects[j].setXSpeed(V2_vector * std::cos(alpha1 - std::atan2(normal_speed_2, rad_speed_2)));
+                    Objects[j].setYSpeed(V2_vector * std::sin(alpha1 - std::atan2(normal_speed_2, rad_speed_2)));
+
+                    if(dist <= 0)
+                    {
+                        Objects[j].setXPosition(Objects[j].getXPosition() - tmp_rad2*std::cos(alpha1) * dist_time);
+                        Objects[j].setYPosition(Objects[j].getYPosition() - tmp_rad2*std::sin(alpha1) * dist_time);
+                    }
+
+                    else
+                    {
+                        Objects[j].setXPosition(Objects[j].getXPosition() + dist * std::cos(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                        Objects[j].setYPosition(Objects[j].getYPosition() + dist * std::sin(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                    }
+
+                    }
+
+                    ellastic_check_array[i] = ellastic_check_array[j] = true;
+                }
+
+                if(Current_Collision_Mode == CollisionMode::NOT_ELASTIC)
+                {
+                    long double rad_speed_1, rad_speed_2;
+                    long double dist_time;
+                    long double alpha1 = std::atan2(Objects[j].getYPosition() - Objects[i].getYPosition(), Objects[j].getXPosition() - Objects[i].getXPosition());
+                    //long double alpha2 = std::atan2(Objects[i].getYPosition() - Objects[j].getYPosition(), Objects[i].getXPosition() - Objects[j].getXPosition());
+                    long double V1_vector, V2_vector;
+                    long double normal_speed_1, normal_speed_2;
+                    long double v_alpha1 = std::atan2(Objects[i].getYSpeed(), Objects[i].getXSpeed());
+                    long double v_alpha2 = std::atan2(Objects[j].getYSpeed(), Objects[j].getXSpeed());
+
+
+                    V1_vector = std::sqrt(std::pow(Objects[i].getXSpeed(), 2) + std::pow(Objects[i].getYSpeed(), 2));
+                    V2_vector = std::sqrt(std::pow(Objects[j].getXSpeed(), 2) + std::pow(Objects[j].getYSpeed(), 2));
+
+                    Objects[i].setXPosition(Objects[i].getXPosition() - Objects[i].getXSpeed()); //Двигаем назад
+                    Objects[i].setYPosition(Objects[i].getYPosition() - Objects[i].getYSpeed());
+
+                    Objects[j].setXPosition(Objects[j].getXPosition() - Objects[j].getXSpeed());
+                    Objects[j].setYPosition(Objects[j].getYPosition() - Objects[j].getYSpeed());
+
+                    long double dist = getDistanceOfCollision(i, j);
+
+                    long double tmp_rad1 = rad_speed_1 = V1_vector * std::cos(alpha1 - v_alpha1);
+                    long double tmp_rad2 = rad_speed_2 = V2_vector * std::cos(alpha1 - v_alpha2);
+
+                    dist_time = (abs(tmp_rad1) + abs(tmp_rad2)) / dist;
+
+                    normal_speed_1 = V1_vector * std::cos(PI * 0.5 - (alpha1 - v_alpha1));
+                    normal_speed_2 = V2_vector * std::cos(PI * 0.5 - (alpha1 - v_alpha2));
+
+                    rad_speed_1 = rad_speed_2 = tmp_rad1 + tmp_rad2;
+
+                    V1_vector = std::sqrt(std::pow(rad_speed_1, 2) + std::pow(normal_speed_1, 2));
+                    V2_vector = std::sqrt(std::pow(rad_speed_2, 2) + std::pow(normal_speed_2, 2));
+
+                    if(!ellastic_check_array[i])
+                    {
+                    Objects[i].setXSpeed(V1_vector * std::cos(alpha1 - std::atan2(normal_speed_1, rad_speed_1)));
+                    Objects[i].setYSpeed(V1_vector * std::sin(alpha1 - std::atan2(normal_speed_1, rad_speed_1)));
+
+                    if(dist <= 0)
+                    {
+                        Objects[i].setXPosition(Objects[i].getXPosition() + tmp_rad1*std::cos(alpha1) * dist_time);
+                        Objects[i].setYPosition(Objects[i].getYPosition() + tmp_rad1*std::sin(alpha1) * dist_time);
+                    }
+
+                    else
+                    {
+                        Objects[i].setXPosition(Objects[i].getXPosition() - dist * std::cos(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                        Objects[i].setYPosition(Objects[i].getYPosition() - dist * std::sin(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                    }
+
+                    }
+
+                    if(!ellastic_check_array[j])
+                    {
+                    Objects[j].setXSpeed(V2_vector * std::cos(alpha1 - std::atan2(normal_speed_2, rad_speed_2)));
+                    Objects[j].setYSpeed(V2_vector * std::sin(alpha1 - std::atan2(normal_speed_2, rad_speed_2)));
+
+                    if(dist <= 0)
+                    {
+                        Objects[j].setXPosition(Objects[j].getXPosition() - tmp_rad2*std::cos(alpha1) * dist_time);
+                        Objects[j].setYPosition(Objects[j].getYPosition() - tmp_rad2*std::sin(alpha1) * dist_time);
+                    }
+
+                    else
+                    {
+                        Objects[j].setXPosition(Objects[j].getXPosition() + dist * std::cos(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                        Objects[j].setYPosition(Objects[j].getYPosition() + dist * std::sin(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
+                    }
+
+                    }
+
+                    ellastic_check_array[i] = ellastic_check_array[j] = true;
                 }
             }
         }
-
-        auto end = std::chrono::steady_clock::now();
-        auto elapsed_ms = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
-        delta = elapsed_ms.count();
     }
+}
 
-    if(current_index >= 0 && current_index < Objects.size()) //Вывод изменённой информации, если выбран какой то объект
-    printToPanel(Objects[current_index], hideAdditionalInfo);
+void MainWindow::everyTickSlot()
+{
+    if(!isPause)
+    {
+        auto begin = std::chrono::steady_clock::now();
+        ForceCalc();
+        auto end = std::chrono::steady_clock::now();
+
+        auto elapsed_mc = std::chrono::duration_cast<std::chrono::microseconds>(end - begin);
+        delta += elapsed_mc.count();
+        MoveObjects();
+        CollisionsCheck();
+
+        if(current_index >= 0 && current_index < Objects.size())
+        printToPanel(Objects[current_index], false);
     }
 
     updateViewport();
 }
+
 
 void MainWindow::setPause()
 {
@@ -1126,6 +1241,11 @@ void MainWindow::addStandartPattern()
     current_pattern = 0;
     ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
     ui->deletepattern_button->setEnabled(true);
+}
+
+long double MainWindow::getDistanceOfCollision(int i, int j)
+{
+    return (Objects[i].getRadius()*10 + Objects[j].getRadius()*10) - getDistance(i, j);
 }
 
 void MainWindow::saveModel()

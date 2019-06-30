@@ -44,6 +44,7 @@ class PhObject
 private:
     long double x, y;
     long double xSpeed, ySpeed;
+    long double xAccel, yAccel;
     long double mass;
     long double radius;
     long double q;
@@ -71,6 +72,9 @@ public:
     void setName   (QString name);
     void setStatic (bool val);
     void setFocus  (bool val);
+    void setXAccel (long double xA) { this->xAccel = xA; }
+    void setYAccel (long double yA) { this->yAccel = yA; }
+    void setAccel  (long double xA, long double yA) { this->xAccel = xA; this->yAccel = yA; }
 
 
     //----Getters----
@@ -79,6 +83,9 @@ public:
 
     long double getXSpeed();
     long double getYSpeed();
+
+    long double getXAccel() { return xAccel; }
+    long double getYAccel() { return yAccel; }
 
     long double  getMass();
     long double  getRadius();
