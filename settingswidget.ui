@@ -31,7 +31,7 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-296</y>
+          <y>0</y>
           <width>712</width>
           <height>815</height>
          </rect>
@@ -99,7 +99,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Основные:</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;ed&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#00aa00;&quot;&gt;Основные:&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
@@ -560,7 +560,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Специальные:</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;eff&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#00007f;&quot;&gt;Специальные:&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>

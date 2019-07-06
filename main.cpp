@@ -13,6 +13,8 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("Simple Physical Simulator");
 
     QApplication a(argc, argv);
+    a.setWindowIcon(QIcon(":/img/Mainico.ico"));
+
     MainWindow w("1.1 beta");
     w.showMaximized();
 

@@ -30,6 +30,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
+void MainWindow::mousePressEvent(QMouseEvent *)
+{
+    emit iconSizeChanged(QSize());
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *pe)
 {
     if(pe->key() == 16777216 && FullScreenMode) //16777216 - Ecs
@@ -66,6 +71,8 @@ MainWindow::MainWindow(QString version, QWidget *parent) :
     this->FullScreenMode = !Programm_Settings.OPEN_FULLSCREEN;
     if(Programm_Settings.OPEN_FULLSCREEN)
         QTimer::singleShot(0, this, SLOT(changeFullScreenMode()));
+
+    QTimer::singleShot(0, this, SLOT(openHello()));
 
     this->version = version;
     QString fs_str = "/Новая модель";
@@ -403,12 +410,6 @@ void MainWindow::CollisionsCheck()
                         Objects[i].setYPosition(Objects[i].getYPosition() + tmp_rad1*std::sin(alpha1) * dist_time);
                     }
 
-                    else
-                    {
-                        Objects[i].setXPosition(Objects[i].getXPosition() - dist * std::cos(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                        Objects[i].setYPosition(Objects[i].getYPosition() - dist * std::sin(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                    }
-
                     }
 
                     if(!ellastic_check_array[j])
@@ -422,11 +423,6 @@ void MainWindow::CollisionsCheck()
                         Objects[j].setYPosition(Objects[j].getYPosition() - tmp_rad2*std::sin(alpha1) * dist_time);
                     }
 
-                    else
-                    {
-                        Objects[j].setXPosition(Objects[j].getXPosition() + dist * std::cos(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                        Objects[j].setYPosition(Objects[j].getYPosition() + dist * std::sin(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                    }
 
                     }
 
@@ -480,12 +476,6 @@ void MainWindow::CollisionsCheck()
                         Objects[i].setYPosition(Objects[i].getYPosition() + tmp_rad1*std::sin(alpha1) * dist_time);
                     }
 
-                    else
-                    {
-                        Objects[i].setXPosition(Objects[i].getXPosition() - dist * std::cos(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                        Objects[i].setYPosition(Objects[i].getYPosition() - dist * std::sin(v_alpha1) * (Objects[i].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                    }
-
                     }
 
                     if(!ellastic_check_array[j])
@@ -497,12 +487,6 @@ void MainWindow::CollisionsCheck()
                     {
                         Objects[j].setXPosition(Objects[j].getXPosition() - tmp_rad2*std::cos(alpha1) * dist_time);
                         Objects[j].setYPosition(Objects[j].getYPosition() - tmp_rad2*std::sin(alpha1) * dist_time);
-                    }
-
-                    else
-                    {
-                        Objects[j].setXPosition(Objects[j].getXPosition() + dist * std::cos(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
-                        Objects[j].setYPosition(Objects[j].getYPosition() + dist * std::sin(v_alpha2) * (Objects[j].getMass() / (Objects[i].getMass() + Objects[j].getMass())));
                     }
 
                     }
@@ -630,9 +614,10 @@ void MainWindow::addObject()
         addStandartPattern();
         updatePatternsList();
         ui->statusBar->showMessage("Для создания нового объекта был использован Стандартный шаблон, так как другие шаблоны отсутствуют");
+        obj = Patterns[current_pattern];
     }
 
-    obj.setName(obj.getName() + " " + QString::number(Objects.size()));
+    obj.setName(obj.getName() + " " + QString::number(Objects.size() + 1));
     obj.setPosition(ui->viewport->getCamX(), ui->viewport->getCamY());
     Objects.push_back(obj);
     updateList();
@@ -645,7 +630,7 @@ void MainWindow::addObject()
         setPause(true);
 }
 
-void MainWindow::deleteObject(int index)
+void MainWindow::deleteObject(int index /*= - 1*/)
 {
     QString name;
 
@@ -675,6 +660,8 @@ void MainWindow::deleteObject(int index)
 
             ui->statusBar->showMessage("Удалён объект: " + name);
         }
+
+        setFocus(current_index);
 
         updateViewport();
 
@@ -1301,13 +1288,22 @@ void MainWindow::openModel()
     setConstFields();
 }
 
-void MainWindow::openDocumentation()
+void MainWindow::openDocumentation(QString str /*= "Основная информация о программе"*/)
 {
-    DocumentationWidget win;
+    DocumentationWidget win(str);
 
     win.setWindowIcon(windowIcon());
 
     win.exec();
+}
+
+void MainWindow::openHello()
+{
+    HelloWindow *h_wind = new HelloWindow(version, this);
+
+    h_wind->setWindowIcon(windowIcon());
+
+    h_wind->exec();
 }
 
 //Создание новой модели
@@ -1704,7 +1700,7 @@ void MainWindow::on_ListObjects_currentRowChanged(int currentRow)
 void MainWindow::addPattern()
 {
     PhObject obj;
-    obj.setName("Новый шаблон");
+    obj.setName("Новый шаблон " + QString::number(Patterns.size() + 1));
     Patterns.push_back(obj);
     setPatternMode(true);
     updatePatternsList();
@@ -1739,10 +1735,7 @@ void MainWindow::deletePattern()
         printToPanel(Patterns[current_pattern]);
     }
 
-    if(current_pattern < 0)
-        ui->choosen_label->setText("Шаблонов нет");
-    else
-        ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
+    setPatternFocus(current_pattern);
 
     updatePatternsList();
     }
@@ -1779,11 +1772,25 @@ void MainWindow::setPatternMode(bool val)
 
 void MainWindow::on_Patterns_list_currentRowChanged(int currentRow)
 {
+    setPatternFocus(currentRow);
+}
+
+void MainWindow::setPatternFocus(int index)
+{
+    if(checkIndexValid(index, Patterns))
+    {
     setPatternMode(true);
-    current_pattern = currentRow;
+    current_pattern = index;
     ui->Propertites_box->setEnabled(true);
     ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
-    printToPanel(Patterns[currentRow]);
+    printToPanel(Patterns[index]);
+    }
+
+    else
+    {
+        ui->choosen_label->setText("Шаблонов нет");
+        setFocus();
+    }
 }
 
 void MainWindow::on_Patterns_list_clicked(const QModelIndex &index)

@@ -10,6 +10,8 @@
 #include <QCloseEvent>
 #include <QKeyEvent>
 
+#include "documentationwidget.h"
+
 namespace Ui {
 class SettingsWidget;
 }
@@ -92,6 +94,10 @@ private slots:
     void on_cancel_button_clicked();
 
     void on_accept_button_clicked();
+
+    void on_label_linkActivated(const QString &link);
+
+    void on_label_2_linkActivated(const QString &link);
 
 private:
     Ui::SettingsWidget *ui;

@@ -18,6 +18,15 @@
         <file>img/Mainico.png</file>
         <file>img/nullspeed.png</file>
         <file>img/clearall.png</file>
+        <file>img/Interface/RU/explorers_ru.png</file>
+        <file>img/Interface/RU/iao_ru.png</file>
+        <file>img/Interface/RU/pattern_redact_ru.png</file>
+        <file>img/Interface/top_panel.png</file>
+        <file>img/Interface/RU/camera_panel_ru.PNG</file>
+        <file>img/Interface/RU/generation_ru.PNG</file>
+        <file>img/Interface/RU/general_settings_ru.PNG</file>
+        <file>img/Interface/RU/special_settings_ru.PNG</file>
+        <file>img/Mainico.ico</file>
     </qresource>
     <qresource prefix="/n">
         <file>documentation/О разработчике.xml</file>
@@ -25,8 +34,25 @@
         <file>documentation/Описание.xml</file>
         <file>documentation/Теоретическая справка.xml</file>
         <file>documentation/Расчёт сил.xml</file>
-        <file>documentation/Столкновения.xml</file>
         <file>documentation/Слияние.xml</file>
         <file>documentation/Изменение скорости и положения.xml</file>
+        <file>documentation/Неупругие столкновения.xml</file>
+        <file>documentation/Столкновения.xml</file>
+        <file>documentation/Упругие столкновения.xml</file>
+        <file>documentation/Управление программой.xml</file>
+        <file>documentation/Окна обозревателей.xml</file>
+        <file>documentation/Обозреватель объектов.xml</file>
+        <file>documentation/Обозреватель шаблонов.xml</file>
+        <file>documentation/Информация об объекте.xml</file>
+        <file>documentation/Панель информации.xml</file>
+        <file>documentation/Редактирование шаблона.xml</file>
+        <file>documentation/Кнопки верхней панели.xml</file>
+        <file>documentation/Камера.xml</file>
+        <file>documentation/Генерация объектов.xml</file>
+        <file>documentation/Сохранение модели.xml</file>
+        <file>documentation/Настройки программы.xml</file>
+        <file>documentation/Основные настройки.xml</file>
+        <file>documentation/Специальные настройки.xml</file>
+        <file>documentation/Подробнее о deltaTime.xml</file>
     </qresource>
 </RCC>

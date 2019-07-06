@@ -3,7 +3,9 @@
 
 #include <QDialog>
 #include <QVector>
+
 #include "phobject.h"
+#include "documentationwidget.h"
 
 namespace Ui {
 class GenerateWidget;
@@ -73,6 +75,8 @@ private slots:
     void on_all_colors_stateChanged(int arg1);
 
     void on_tangentum_speed_textEdited(const QString &arg1);
+
+    void on_label_linkActivated(const QString &link);
 
 private:
     void setRadiusMode(bool val);

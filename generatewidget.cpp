@@ -56,7 +56,7 @@ GenerateWidget::GenerateWidget(QVector<PhObject> pat_list, QWidget *parent, bool
     ui->space->setValidator(pfrsp_val);
     ui->mx_speed_line->setValidator(pfrsp_val);
     ui->speed->setValidator(pfrsp_val);
-    ui->tangentum_speed->setValidator(pfrsp_val);
+    ui->tangentum_speed->setValidator(massq_val);
 
     firstOut = true;
 
@@ -428,4 +428,13 @@ void GenerateWidget::on_all_colors_stateChanged(int arg1)
 void GenerateWidget::on_tangentum_speed_textEdited(const QString &arg1)
 {
     pattern->tangentum_speed = ui->tangentum_speed->text().toDouble();
+}
+
+void GenerateWidget::on_label_linkActivated(const QString &link)
+{
+    DocumentationWidget about_gen("Генерация объектов");
+
+    about_gen.setWindowIcon(windowIcon());
+
+    about_gen.exec();
 }

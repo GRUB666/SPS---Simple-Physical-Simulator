@@ -8,6 +8,9 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+QMAKE_TARGET_COMPANY = SKY computers
+QMAKE_TARGET_PRODUCT = Simple Physical Simulator
+
 TARGET = SimplePhysicalSimulator
 TEMPLATE = app
 
@@ -27,6 +30,7 @@ CONFIG += c++11
 SOURCES += \
         documentationwidget.cpp \
         generatewidget.cpp \
+        hellowindow.cpp \
         main.cpp \
         mainwindow.cpp \
         phobject.cpp \
@@ -38,6 +42,7 @@ SOURCES += \
 HEADERS += \
         documentationwidget.h \
         generatewidget.h \
+        hellowindow.h \
         mainwindow.h \
         phobject.h \
         settings.h \
@@ -48,8 +53,10 @@ HEADERS += \
 FORMS += \
         documentationwidget.ui \
         generatewidget.ui \
+        hellowindow.ui \
         mainwindow.ui \
         settingswidget.ui
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -454,3 +454,21 @@ void SettingsWidget::on_accept_button_clicked()
 }
 
 
+
+void SettingsWidget::on_label_linkActivated(const QString &link)
+{
+    DocumentationWidget about_gen("Основные настройки");
+
+    about_gen.setWindowIcon(windowIcon());
+
+    about_gen.exec();
+}
+
+void SettingsWidget::on_label_2_linkActivated(const QString &link)
+{
+    DocumentationWidget about_spec("Специальные настройки");
+
+    about_spec.setWindowIcon(windowIcon());
+
+    about_spec.exec();
+}

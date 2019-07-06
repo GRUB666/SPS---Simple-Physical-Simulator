@@ -19,6 +19,7 @@
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QCloseEvent>
+#include <QMouseEvent>
 
 #include "phobject.h"
 #include "generatewidget.h"
@@ -26,6 +27,7 @@
 #include "simulationstate.h"
 #include "settings.h"
 #include "documentationwidget.h"
+#include "hellowindow.h"
 
 #define PI 3.141592653589793238462643
 
@@ -42,6 +44,7 @@ class MainWindow : public QMainWindow
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
+    virtual void mousePressEvent(QMouseEvent* );
 
 private:
     QVector<PhObject> Objects;
@@ -145,6 +148,7 @@ private slots:
    void updatePatternsList();
    void setPatternMode(bool val);
    void on_Patterns_list_currentRowChanged(int currentRow);
+   void setPatternFocus(int index);
    void on_Patterns_list_clicked(const QModelIndex &index);
    void on_ListObjects_clicked(const QModelIndex &index);
    void changeScaleSlot(double value);
@@ -169,7 +173,11 @@ private slots:
    void saveModel();
    void saveModelAs();
    void openModel();
-   void openDocumentation();
+   void openDocumentation(QString str = "Основная информация о программе");
+   void openHello();
+
+signals:
+   void clickInArea();
 };
 
 #endif // MAINWINDOW_H
