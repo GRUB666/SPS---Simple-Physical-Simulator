@@ -30,10 +30,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-void MainWindow::mousePressEvent(QMouseEvent *)
-{
-    emit iconSizeChanged(QSize());
-}
 
 void MainWindow::keyPressEvent(QKeyEvent *pe)
 {

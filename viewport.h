@@ -10,6 +10,8 @@
 
 #include "phobject.h"
 
+
+//Отображает графику
 class Viewport : public QFrame
 {
     Q_OBJECT

@@ -17,18 +17,22 @@ class DocumentationWidget : public QDialog
     Q_OBJECT
 
 private:
-    QString Main_inf_way;
-    bool first_selected;
-    QString open_string;
+    bool first_selected; //Необходимо для избежания непроизвольного срабатывания в начале работы
+    QString open_string; //Названия католога, который будет открыт в первую очередь
 
 public:
-    explicit DocumentationWidget(QString string = "Основная информация о программе", QWidget *parent = nullptr);
-    ~DocumentationWidget();
-    QString readFromFile(QString& str);
-    void selectItemWithText(QString& text);
-    void selectItemRecursive(QString& text, QTreeWidgetItem* item);
-    void openBranch(QTreeWidgetItem* item);
-    void openCatalog(QString& name);
+    explicit DocumentationWidget (QString string = "Основная информация о программе", QWidget *parent = nullptr);
+             ~DocumentationWidget(                                                                             );
+
+    QString  readFromFile        (QString& str); //Читает данные из файла
+
+
+    void     selectItemWithText (QString& text                       );//Находит и выделяет элемент по его названию
+    void     selectItemRecursive(QString& text, QTreeWidgetItem* item); //Побочная функция метода selectItemWithText
+
+    void     openBranch (QTreeWidgetItem* item); //Открывает все родительские и дочерние ветки элемента
+
+    void     openCatalog(QString& name); //Открывает каталог по указанному имени
 
 private slots:
     void on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);

@@ -12,11 +12,7 @@ HelloWindow::HelloWindow(QString version, QWidget *parent) :
 
     ui->label_2->setText(ui->label_2->text() + " " + version);
 
-    this->setWindowFlag(Qt::ToolTip); //SplashScreen
-
-   // setStyleSheet("background-color: #738fbd");
-
-    //connect(parent, SIGNAL(iconSizeChanged(QSize)), this, SLOT(focusSlot()));
+    this->setWindowFlag(Qt::ToolTip);
 
     ui->pushButton->setFocus();
 }
@@ -24,11 +20,6 @@ HelloWindow::HelloWindow(QString version, QWidget *parent) :
 HelloWindow::~HelloWindow()
 {
     delete ui;
-}
-
-void HelloWindow::focusSlot()
-{
-    close();
 }
 
 void HelloWindow::on_pushButton_clicked()

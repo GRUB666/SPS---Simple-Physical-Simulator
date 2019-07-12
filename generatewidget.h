@@ -7,6 +7,9 @@
 #include "phobject.h"
 #include "documentationwidget.h"
 
+//Этот класс требует серьёзного рефакторинга
+
+
 namespace Ui {
 class GenerateWidget;
 }
@@ -16,7 +19,7 @@ class GenerateWidget : public QDialog
     Q_OBJECT
 
 private:
-    GeneratePattern *pattern;
+    GeneratePattern *pattern;  //Указатель на шаблон
     QVector<PhObject> pat_list;
     bool *succes;
     int CamX, CamY;

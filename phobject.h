@@ -5,19 +5,26 @@
 #include <QString>
 #include <QVector>
 
+//Стрктура шаблона генерации
 struct GeneratePattern
 {
-    long double q1, q2, m1, m2;
+    long double q1, q2, m1, m2; //Пределы для значений
     double rad1, rad2;
-    int free_space;
+
+    int free_space; //Свободное пространство
+
     double start_speed;
-    QVector<QColor> colors;
-    bool rad_auto;
-    double p;
+    QVector<QColor> colors; //Цвета для генерации
+
+    bool rad_auto; //Режим установки радиуса (пропорционально или произвольно)
+
+    double p; //"Плотность"
+
     double max_speed;
     double tangentum_speed;
     QString name;
-    int x0, y0;
+
+    int x0, y0; //Центры генерации
 
     GeneratePattern()
     {
@@ -27,7 +34,7 @@ struct GeneratePattern
         m2 = 2;
         rad1 = 1;
         rad2 = 2;
-        free_space = 9000;
+        free_space = 11000;
         start_speed = 0;
         max_speed = 0;
         colors.push_back(Qt::black);
@@ -39,19 +46,26 @@ struct GeneratePattern
     }
 };
 
+//Класс Physical Object
 class PhObject
 {
 private:
     long double x, y;
+
     long double xSpeed, ySpeed;
     long double xAccel, yAccel;
+
     long double mass;
     long double radius;
     long double q;
+
     QColor color;
+
     QString Name;
+
     bool isStatic;
-    bool inFocus;
+
+    bool inFocus; //В фокусе ли сейчас объект (необходимо ли подсвечивать)
 
 public:
     PhObject(long double mass = 1, long double rad = 1, long double q = 0, long double x = 0, long double y = 0, long double xS = 0, long double yS = 0);
@@ -94,6 +108,7 @@ public:
     QString getName();
     bool getStatic();
     bool getFocus();
+
 
     bool operator != (PhObject& par)
     {

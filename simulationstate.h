@@ -8,6 +8,11 @@
 #include "settings.h"
 #include <phobject.h>
 
+/*Класс состояния симуляции
+Ссылается на переменные в классе mainwindow.h
+В нём так же реализован интерфейс сохранения состояния симуляции
+*/
+
 class SimulationState
 {
 private:

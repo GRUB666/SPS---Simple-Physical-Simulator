@@ -6,6 +6,7 @@
 enum CollisionMode {MERGE, ELASTIC, NOT_ELASTIC};
 
 
+//Структура настроек
 struct Settings
 {
 
