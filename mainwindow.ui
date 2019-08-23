@@ -695,6 +695,9 @@
             <height>291</height>
            </size>
           </property>
+          <property name="cursor">
+           <cursorShape>ArrowCursor</cursorShape>
+          </property>
           <property name="frameShape">
            <enum>QFrame::Box</enum>
           </property>
@@ -1377,6 +1380,13 @@
                </item>
               </layout>
              </item>
+             <item>
+              <widget class="QPushButton" name="makePattern">
+               <property name="text">
+                <string>Сделать шаблоном</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -1497,13 +1507,13 @@
          <widget class="QLabel" name="cam_pos_label">
           <property name="font">
            <font>
-            <pointsize>9</pointsize>
+            <pointsize>10</pointsize>
             <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
           <property name="text">
-           <string>Камера [0; 0]</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;333&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#00aa00;&quot;&gt;Камера [0; 0]&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
@@ -1540,7 +1550,7 @@
            </font>
           </property>
           <property name="text">
-           <string>100%</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; color:#00aa00;&quot;&gt;100%&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>

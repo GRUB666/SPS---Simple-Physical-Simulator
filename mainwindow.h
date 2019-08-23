@@ -28,8 +28,11 @@
 #include "settings.h"
 #include "documentationwidget.h"
 #include "hellowindow.h"
+#include "cameraposition.h"
 
 #define PI 3.141592653589793238462643
+#define MAX_INT_VALUE 100000000 //2147480000 Необходим небольшой отступ (100 единиц) от крайнего значения int 2147483648
+
 
 
 
@@ -153,6 +156,7 @@ private:
 
     void        CollisionsCheck       (                                                );
 
+    void        LeaveBordersCheck     (PhObject* obj                                   );
 
 
 private:
@@ -238,6 +242,12 @@ private slots:
    void openDocumentation                 (QString str = "Основная информация о программе");
 
    void openHello                         (                                               );
+
+   void openCamPos                        ();
+
+   void on_cam_pos_label_linkActivated(const QString &link);
+
+   void on_makePattern_clicked();
 
 };
 

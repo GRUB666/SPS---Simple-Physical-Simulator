@@ -198,7 +198,7 @@ int SimulationState::ReadDataFromFile(QString way /*= ""*/)
 
     QString buffer;
 
-    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{1,}");
+    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{0,}");
     float_reg.setPatternSyntax(QRegExp::RegExp);
 
     QRegExp int_reg("\\-?\\d{1,}");

@@ -7,9 +7,12 @@
 #include <QMouseEvent>
 #include <QDebug>
 #include <QKeyEvent>
+#include <QFocusEvent>
 
 #include "phobject.h"
 
+#define MAX_INT_VALUE 100000000 //2147480000
+                    //2000000000
 
 //Отображает графику
 class Viewport : public QFrame
@@ -62,6 +65,7 @@ public:
 signals:
     void whellScrolled(double value);
     void camScrolled();
+    void replaceCamSignal();
 };
 
 #endif // VIEWPORT_H

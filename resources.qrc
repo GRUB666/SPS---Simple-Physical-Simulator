@@ -29,7 +29,6 @@
         <file>img/Mainico.ico</file>
     </qresource>
     <qresource prefix="/n">
-        <file>documentation/О разработчике.xml</file>
         <file>documentation/Основная информация о программе.xml</file>
         <file>documentation/Описание.xml</file>
         <file>documentation/Теоретическая справка.xml</file>
@@ -54,5 +53,6 @@
         <file>documentation/Основные настройки.xml</file>
         <file>documentation/Специальные настройки.xml</file>
         <file>documentation/Подробнее о deltaTime.xml</file>
+        <file>documentation/О разработчике.xml</file>
     </qresource>
 </RCC>

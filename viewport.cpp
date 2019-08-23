@@ -11,6 +11,18 @@ void Viewport::paintEvent(QPaintEvent *)
     p.scale(1/distance_scale, 1/distance_scale);
     //p.rotate(alpha);
 
+    //Проверка на выход камеры за пределы пространства
+    if(camX < -MAX_INT_VALUE)
+        camX = MAX_INT_VALUE;
+    if(camY < -MAX_INT_VALUE)
+        camY = MAX_INT_VALUE;
+
+    if(camX > MAX_INT_VALUE)
+        camX = -MAX_INT_VALUE;
+    if(camY > MAX_INT_VALUE)
+        camY = -MAX_INT_VALUE;
+
+
 
     for(auto &var : ToPaintVector)
     {
@@ -22,6 +34,12 @@ void Viewport::paintEvent(QPaintEvent *)
         p.setBrush(QBrush(var.getColor(), Qt::SolidPattern));
         p.drawEllipse(var.getXPosition() - var.getRadius()*10 - camX, var.getYPosition() - var.getRadius()*10 - camY, var.getRadius()*20, var.getRadius()*20);
     }
+
+    p.setPen(QPen(Qt::magenta, 10, Qt::SolidLine));
+    p.drawLine(QPoint(-MAX_INT_VALUE - camX, MAX_INT_VALUE - camY), QPoint(-MAX_INT_VALUE - camX, -MAX_INT_VALUE - camY));
+    p.drawLine(QPoint(-MAX_INT_VALUE - camX, MAX_INT_VALUE - camY), QPoint(MAX_INT_VALUE - camX, MAX_INT_VALUE - camY));
+    p.drawLine(QPoint(-MAX_INT_VALUE - camX, -MAX_INT_VALUE - camY), QPoint(MAX_INT_VALUE - camX, -MAX_INT_VALUE - camY));
+    p.drawLine(QPoint(MAX_INT_VALUE - camX, MAX_INT_VALUE - camY), QPoint(MAX_INT_VALUE - camX, -MAX_INT_VALUE - camY));
 }
 
 void Viewport::wheelEvent(QWheelEvent *e)
@@ -38,28 +56,37 @@ void Viewport::wheelEvent(QWheelEvent *e)
 
 void Viewport::mouseMoveEvent(QMouseEvent *p)
 {
-    camX -= (p->x() - bufferX)*distance_scale;
-    camY += (p->y() - bufferY)*distance_scale;
+    if(p->buttons() != Qt::RightButton)
+    {
+        camX -= (p->x() - bufferX)*distance_scale;
+        camY += (p->y() - bufferY)*distance_scale;
 
-    update();
-    emit camScrolled();
-    bufferX = p->x();
-    bufferY = p->y();
+        update();
+        emit camScrolled();
+        bufferX = p->x();
+        bufferY = p->y();
+    }
 }
 
 void Viewport::mousePressEvent(QMouseEvent *p)
 {
-    /*if(p->buttons() == Qt::MiddleButton)
+    setFocus();
+
+    if(p->button() == Qt::RightButton)
     {
-        alpha += 90;
-        if(alpha >= 360)
-            alpha = 0;
+        camX += distance_scale*(p->x() - this->width()/2);
+        camY -= distance_scale*(p->y() - this->height()/2);
 
-        update();
-    }*/
+        this->cursor().setPos(mapToGlobal(QPoint(this->width()/2, this->height()/2)));
 
-    bufferX = p->x();
-    bufferY = p->y();
+        emit replaceCamSignal();
+    }
+
+    if(p->button() != Qt::RightButton)
+    {
+        bufferX = p->x();
+        bufferY = p->y();
+    }
 }
 
 

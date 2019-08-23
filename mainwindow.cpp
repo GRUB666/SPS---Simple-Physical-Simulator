@@ -212,6 +212,7 @@ MainWindow::MainWindow(QString version, QWidget *parent) :
     connect(ui->ys_line, SIGNAL(textEdited(QString)), this, SLOT(changeParameters()));
     connect(ui->isMoveBox, SIGNAL(stateChanged(int)), this, SLOT(changeParameters()));
     connect(ui->color_box, SIGNAL(currentIndexChanged(int)), this, SLOT(changeParameters()));
+    //connect(ui->cam_pos_label, SIGNAL(clicked()), this, SLOT(openCamPos()));
     //-------------------
 
     //Степени десятки---
@@ -223,6 +224,7 @@ MainWindow::MainWindow(QString version, QWidget *parent) :
     connect(ui->viewport, SIGNAL(whellScrolled(double)), this, SLOT(changeScaleSlot(double)));
     connect(ui->viewport, SIGNAL(camScrolled()), this, SLOT(updateCameraLabel()));
     connect(ui->scale_slider, SIGNAL(valueChanged(int)), this, SLOT(changeScaleSlot(int)));
+    connect(ui->viewport, SIGNAL(replaceCamSignal()), SLOT(updateCameraLabel()));
     //-------------------------------------------
 
     //Дополнительные----------------
@@ -296,6 +298,8 @@ void MainWindow::MoveObjects()
 
         Objects[i].setXPosition(Objects[i].getXPosition() + Objects[i].getXSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
         Objects[i].setYPosition(Objects[i].getYPosition() + Objects[i].getYSpeed() * delta * Programm_Settings.SIMULATION_SPEED);
+
+        LeaveBordersCheck(&Objects[i]);
 
         if(follow_to_focus_object && Objects[i].getFocus())//Слежка за выбранным объектом если это необходимо
            followToObject(Objects[i]);
@@ -494,6 +498,20 @@ void MainWindow::CollisionsCheck()
     }
 }
 
+void MainWindow::LeaveBordersCheck(PhObject* obj)
+{
+    //Проверка на выход за границы карты (В случае выхода переместить на другой конец)
+    if(obj->getXPosition() > MAX_INT_VALUE)
+        obj->setXPosition(-MAX_INT_VALUE);
+    if(obj->getYPosition() > MAX_INT_VALUE)
+        obj->setYPosition(-MAX_INT_VALUE);
+
+    if(obj->getXPosition() < -MAX_INT_VALUE)
+        obj->setXPosition(MAX_INT_VALUE);
+    if(obj->getYPosition() < -MAX_INT_VALUE)
+        obj->setYPosition(MAX_INT_VALUE);
+}
+
 void MainWindow::everyTickSlot()
 {
     if(!isPause)
@@ -507,7 +525,7 @@ void MainWindow::everyTickSlot()
         MoveObjects();
         CollisionsCheck();
 
-        if(current_index >= 0 && current_index < Objects.size())
+        if(current_index >= 0 && current_index < Objects.size() && !pattern_mode)
         printToPanel(Objects[current_index], false);
     }
 
@@ -938,6 +956,9 @@ void MainWindow::clearAllObjectsSlot()
 
 void MainWindow::OpenSettings()
 {
+    bool wasPause = isPause;
+    setPause(true);
+
     bool succes;
 
     SettingsWidget *win = new SettingsWidget(&Programm_Settings, &Simulation_State, &succes);
@@ -955,6 +976,8 @@ void MainWindow::OpenSettings()
     ui->viewport->setScrollSpeed(Programm_Settings.SCALE_SPEED);
 
     updateViewport();
+
+    setPause(wasPause);
 }
 
 //Слот, который создаёт новую модель
@@ -1052,7 +1075,7 @@ void MainWindow::setNewWindowTitle(QString &way)
 }
 
 void MainWindow::savePatterns()
-{
+{  
     QFile patterns_file(patterns_way);
 
     QTextStream writer(&patterns_file);
@@ -1102,7 +1125,7 @@ void MainWindow::loadPatterns()
     QTextStream reader(&patterns_file);
     QString buffer;
 
-    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{1,}");
+    QRegExp float_reg("\\-?\\d{1,}\\.?\\d{1,}e?\\-?\\d{0,}");
     float_reg.setPatternSyntax(QRegExp::RegExp);
 
     QRegExp int_reg("\\-?\\d{1,}");
@@ -1282,6 +1305,7 @@ void MainWindow::openModel()
     updateList();
     updateViewport();
     setConstFields();
+    setPause(true);
 }
 
 void MainWindow::openDocumentation(QString str /*= "Основная информация о программе"*/)
@@ -1300,6 +1324,15 @@ void MainWindow::openHello()
     h_wind->setWindowIcon(windowIcon());
 
     h_wind->exec();
+}
+
+void MainWindow::openCamPos()
+{
+    CameraPosition *win = new CameraPosition(ui->viewport->getPointerCamX(), ui->viewport->getPointerCamY());
+
+    win->exec();
+
+    updateCameraLabel();
 }
 
 //Создание новой модели
@@ -1655,6 +1688,8 @@ void MainWindow::changeParameters()
     if(Objects[current_index].getStatic())
         Objects[current_index].setSpeed(0, 0);
 
+    LeaveBordersCheck(&Objects[current_index]);
+
     updateViewport();
     }
 
@@ -1703,7 +1738,7 @@ void MainWindow::addPattern()
     ui->Propertites_box->setEnabled(true);
     current_pattern = Patterns.size() - 1;
     ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
-    printToPanel(Patterns[Patterns.size() - 1]);
+    printToPanel(Patterns[current_pattern]);
     ui->deletepattern_button->setEnabled(true);
     ui->statusBar->showMessage("Создан новый шаблон");
 }
@@ -1762,8 +1797,11 @@ void MainWindow::setPatternMode(bool val)
     pattern_mode = val;
     if(val)
         ui->Propertites_box->setTitle("Редактирование шаблона");
+
     else
         ui->Propertites_box->setTitle("Свойства объекта");
+
+    ui->makePattern->setEnabled(!val);
 }
 
 void MainWindow::on_Patterns_list_currentRowChanged(int currentRow)
@@ -1807,7 +1845,8 @@ void MainWindow::on_ListObjects_clicked(const QModelIndex &index)
 void MainWindow::changeScaleSlot(double value)
 {
     ui->scale_slider->setValue(value);
-    ui->scale_label->setText(QString::number(value) + "%");
+    QString sc = QString::number(value) + "%";
+    ui->scale_label->setText("<html><head/><body><p><span style=\" font-size:11pt; color:#00aa00;\">" + sc +"</span></p></body></html>");
     ui->viewport->setScale((double)value / 100);
 }
 
@@ -1818,7 +1857,10 @@ void MainWindow::changeScaleSlot(int value)
 
 void MainWindow::updateCameraLabel()
 {
-    ui->cam_pos_label->setText("Камера [" + QString::number(ui->viewport->getCamX()) + "; " + QString::number(ui->viewport->getCamY()) + "]");
+    //ui->cam_pos_label->setText("Камера [" + QString::number(ui->viewport->getCamX()) + "; " + QString::number(ui->viewport->getCamY()) + "]");
+    QString xc = QString::number(ui->viewport->getCamX());
+    QString yc = QString::number(ui->viewport->getCamY());
+    ui->cam_pos_label->setText("<html><head/><body><p><a href=\"333\"><span style=\" font-size:11pt; text-decoration: underline; color:#00aa00;\">Камера [" + xc + "; " + yc + "]</span></a></p></body></html>");
 }
 
 void MainWindow::moveCameraToCenter()
@@ -1964,4 +2006,22 @@ void MainWindow::OpenGenerateWidget()
         randomGenerate(pat, count);
 }
 
+
+
+void MainWindow::on_cam_pos_label_linkActivated(const QString &link)
+{
+    openCamPos();
+}
+
+void MainWindow::on_makePattern_clicked()
+{
+    Patterns.push_back(Objects[current_index]);
+    setPatternMode(true);
+    updatePatternsList();
+    current_pattern = Patterns.size() - 1;
+    ui->choosen_label->setText("Выбран: " + Patterns[current_pattern].getName());
+    printToPanel(Patterns[current_pattern]);
+    ui->deletepattern_button->setEnabled(true);
+    ui->statusBar->showMessage("Создан новый шаблон из объекта: " + Patterns[current_pattern].getName());
+}
 

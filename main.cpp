@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setWindowIcon(QIcon(":/img/Mainico.ico"));
 
-    MainWindow w("1.1");
+    MainWindow w("1.2");
     w.showMaximized();
 
     return a.exec();

@@ -28,6 +28,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        cameraposition.cpp \
         documentationwidget.cpp \
         generatewidget.cpp \
         hellowindow.cpp \
@@ -40,6 +41,7 @@ SOURCES += \
         viewport.cpp
 
 HEADERS += \
+        cameraposition.h \
         documentationwidget.h \
         generatewidget.h \
         hellowindow.h \
@@ -51,6 +53,7 @@ HEADERS += \
         viewport.h
 
 FORMS += \
+        cameraposition.ui \
         documentationwidget.ui \
         generatewidget.ui \
         hellowindow.ui \
